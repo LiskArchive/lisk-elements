@@ -5,5 +5,7 @@ before_script:
   - npm install -g grunt
   - npm install -g grunt-cli
 script: grunt travis
+notifications:
+  webhooks: https://coveralls.io/webhook?repo_token=4mMdIWcNyIyzCXml1EBZCKw4Ll2prekrD
 after_failure:
   - cat .app.log
