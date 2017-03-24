@@ -7,11 +7,16 @@
 <body>
 
 
-<script src="https://gitcdn.xyz/repo/LiskHQ/lisk-js/development/dist/lisk-js.js"></script>
+<script src="./dist/lisk-js.js"></script>
 <script>
     "use strict";
 
-    console.log(lisk);
+    var LSK = lisk.api({ node: 'localhost', port: '4000', nethash: '198f2b61a8eb95fbeed58b8216780b68f697f26b849acf00c8c93bb9b24f783d', testnet: true });
+
+    LSK.sendRequest('transactions', { secret: 'wagon stock borrow episode laundry kitten salute link globe zero feed marble', amount: '100000000', recipientId: '1085993630748340485L' }, function(res) {
+    	console.log(res);
+    });
+
 </script>
 </body>
 </html>

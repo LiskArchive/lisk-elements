@@ -84,10 +84,10 @@ function LiskAPI (options) {
 	if (options.port === '' || options.port) this.port = options.port;
 	else                                    this.port = 8000;
 	this.parseOfflineRequests = parseOfflineRequest;
-	this.nethash = this.getNethash();
+	this.nethash = this.getNethash(options.nethash);
 }
 
-LiskAPI.prototype.getNethash = function () {
+LiskAPI.prototype.getNethash = function (nethash) {
 	var NetHash;
 
 	if (this.testnet) {
@@ -110,6 +110,11 @@ LiskAPI.prototype.getNethash = function () {
 			'minVersion': '>=0.5.0',
 			'port': this.port
 		};
+	}
+
+	if(nethash) {
+		NetHash.nethash = nethash;
+		NetHash.version = '0.0.0a';
 	}
 
 	return NetHash;
@@ -504,29 +509,29 @@ ParseOfflineRequest.prototype.checkOfflineRequestBefore = function () {
 		},
 		'accounts/delegates': function () {
 			var transaction = LiskJS.vote.createVote(OfflineRequestThis.options['secret'], OfflineRequestThis.options['delegates'], OfflineRequestThis.options['secondSecret'] );
-			OfflineRequestThis.params = { transaction };
+			OfflineRequestThis.params = transaction ;
 
 			return {
 				requestMethod: 'POST',
 				requestUrl: 'transactions',
-				params: { transaction }
+				params: transaction
 			};
 		},
 		'transactions': function () {
 			var transaction = LiskJS.transaction.createTransaction(OfflineRequestThis.options['recipientId'], OfflineRequestThis.options['amount'], OfflineRequestThis.options['secret'], OfflineRequestThis.options['secondSecret']);
 
-			OfflineRequestThis.params = { transaction };
+			OfflineRequestThis.params = transaction;
 
 			return {
 				requestMethod: 'POST',
 				requestUrl: 'transactions',
-				params: { transaction }
+				params: transaction
 			};
 		},
 		'signatures': function () {
 			var transaction = LiskJS.signature.createSignature(OfflineRequestThis.options['secret'], OfflineRequestThis.options['secondSecret']);
 
-			OfflineRequestThis.params = { transaction };
+			OfflineRequestThis.params = transaction;
 
 			return {
 				requestMethod: 'POST',
@@ -537,12 +542,12 @@ ParseOfflineRequest.prototype.checkOfflineRequestBefore = function () {
 		'delegates': function () {
 			var transaction = LiskJS.delegate.createDelegate(OfflineRequestThis.options['secret'], OfflineRequestThis.options['username'], OfflineRequestThis.options['secondSecret']);
 
-			OfflineRequestThis.params = { transaction };
+			OfflineRequestThis.params = transaction;
 
 			return {
 				requestMethod: 'POST',
 				requestUrl: 'transactions',
-				params: { transaction }
+				params: transaction
 			};
 		},
 		'dapps': function () {
@@ -560,12 +565,12 @@ ParseOfflineRequest.prototype.checkOfflineRequestBefore = function () {
 
 			var transaction = LiskJS.dapp.createDapp(DappOptions);
 
-			OfflineRequestThis.params = { transaction };
+			OfflineRequestThis.params = transaction;
 
 			return {
 				requestMethod: 'POST',
 				requestUrl: 'transactions',
-				params: { transaction }
+				params: transaction
 			};
 		},
 		'multisignatures': 'PUT'
@@ -22590,7 +22595,7 @@ module.exports={
         "spec": ">=6.0.0 <7.0.0",
         "type": "range"
       },
-      "/Users/Oliver/github/LiskHQ/lisk-js/node_modules/browserify-sign"
+      "/Users/tobias/GitHub/lisk-js/node_modules/browserify-sign"
     ]
   ],
   "_from": "elliptic@>=6.0.0 <7.0.0",
@@ -22625,7 +22630,7 @@ module.exports={
   "_shasum": "cac9af8762c85836187003c8dfe193e5e2eae5df",
   "_shrinkwrap": null,
   "_spec": "elliptic@^6.0.0",
-  "_where": "/Users/Oliver/github/LiskHQ/lisk-js/node_modules/browserify-sign",
+  "_where": "/Users/tobias/GitHub/lisk-js/node_modules/browserify-sign",
   "author": {
     "name": "Fedor Indutny",
     "email": "fedor@indutny.com"
