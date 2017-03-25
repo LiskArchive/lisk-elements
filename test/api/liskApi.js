@@ -468,6 +468,7 @@ describe('Lisk.api()', function () {
 
 	describe('#listBlocks', function () {
 
+		this.timeout(20000);
 		it('should list amount of blocks defined', function (done) {
 			lisk.api().listBlocks('3', function (data) {
 				(data).should.be.ok;
@@ -481,6 +482,7 @@ describe('Lisk.api()', function () {
 
 	describe('#listForgedBlocks', function () {
 
+		this.timeout(20000);
 		it('should list amount of ForgedBlocks', function (done) {
 			lisk.api().listForgedBlocks('130649e3d8d34eb59197c00bcf6f199bc4ec06ba0968f1d473b010384569e7f0', function (data) {
 				(data).should.be.ok;
@@ -493,6 +495,7 @@ describe('Lisk.api()', function () {
 
 	describe('#getBlock', function () {
 
+		this.timeout(20000);
 		it('should get a block of certain height', function (done) {
 			lisk.api().getBlock('2346638', function (data) {
 				(data).should.be.ok;
