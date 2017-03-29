@@ -214,7 +214,6 @@ describe('transaction.js', function () {
 		var createTransaction = transaction.createTransaction;
 		var trs = null;
 		var secondSecret = 'second secret';
-		var keys = lisk.crypto.getKeys(secondSecret);
 
 		it('should be a function', function () {
 			(createTransaction).should.be.type('function');
