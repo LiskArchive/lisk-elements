@@ -33,7 +33,7 @@ describe('delegate.js', function () {
 		});
 
 		it('should create delegate', function () {
-			trs = createDelegate('secret', 'delegate', 'secret 2');
+			trs = createDelegate('secret', 'delegate', 'secret 2', 'data');
 		});
 
 		describe('returned delegate', function () {

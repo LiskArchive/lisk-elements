@@ -24,7 +24,7 @@ describe('transaction.js', function () {
 			(createTransaction).should.be.type('function');
 		});
 
-		it('should create transaction without second signature', function () {
+		it('should create transaction without second signature and without data', function () {
 			trs = createTransaction('58191285901858109L', 1000, 'secret');
 			(trs).should.be.ok;
 		});
@@ -71,7 +71,7 @@ describe('transaction.js', function () {
 				(trs.asset).should.be.type('object').and.empty;
 			});
 
-			it('should does not have second signature', function () {
+			it('should not have second signature', function () {
 				(trs).should.not.have.property('signSignature');
 			});
 
@@ -209,4 +209,32 @@ describe('transaction.js', function () {
 			});
 		});
 	});
+
+	describe('#createTransaction with secondSignature and data', function () {
+		var createTransaction = transaction.createTransaction;
+		var trs = null;
+		var secondSecret = 'second secret';
+		var keys = lisk.crypto.getKeys(secondSecret);
+
+		it('should be a function', function () {
+			(createTransaction).should.be.type('function');
+		});
+
+		it('should create transaction with second signature and data', function () {
+			trs = createTransaction('58191285901858109L', 1000, 'secret', secondSecret, 'data');
+			(trs).should.be.ok;
+		});
+
+		describe('returned transaction', function () {
+
+			it('should conatain data field with string value', function () {
+
+				(trs.data).should.be.type('string');
+
+			});
+
+		});
+
+	});
+
 });
