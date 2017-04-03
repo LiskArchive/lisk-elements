@@ -27,7 +27,7 @@ lisk = {
 module.exports = lisk;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./lib/api/liskApi":2,"./lib/transactions/crypto.js":6,"./lib/transactions/dapp.js":12,"./lib/transactions/delegate.js":13,"./lib/transactions/multisignature.js":14,"./lib/transactions/signature.js":15,"./lib/transactions/transaction.js":16,"./lib/transactions/vote.js":18,"js-nacl":115}],2:[function(require,module,exports){
+},{"./lib/api/liskApi":2,"./lib/transactions/crypto.js":6,"./lib/transactions/dapp.js":12,"./lib/transactions/delegate.js":13,"./lib/transactions/multisignature.js":14,"./lib/transactions/signature.js":15,"./lib/transactions/transaction.js":16,"./lib/transactions/vote.js":18,"js-nacl":116}],2:[function(require,module,exports){
 (function (process){
 /*
  * Copyright © 2017 Lisk Foundation
@@ -1341,7 +1341,11 @@ module.exports = {
 	getPrivateAndPublicKeyFromSecret: cryptoModule.getPrivateAndPublicKeyFromSecret,
 	getRawPrivateAndPublicKeyFromSecret: cryptoModule.getRawPrivateAndPublicKeyFromSecret,
 	getAddressFromPublicKey: cryptoModule.getAddressFromPublicKey,
-	getSha256Hash: cryptoModule.getSha256Hash
+	getSha256Hash: cryptoModule.getSha256Hash,
+	encryptMessageWithSecret: cryptoModule.encryptMessageWithSecret,
+	decryptMessageWithSecret: cryptoModule.decryptMessageWithSecret,
+	convertPublicKeyEd2Curve: cryptoModule.convertPublicKeyEd2Curve,
+	convertPrivateKeyEd2Curve: cryptoModule.convertPrivateKeyEd2Curve,
 };
 
 }).call(this,require("buffer").Buffer)
@@ -1442,6 +1446,10 @@ module.exports = {
 	signMessageWithSecret: sign.signMessageWithSecret,
 	signAndPrintMessage: sign.signAndPrintMessage,
 	printSignedMessage: sign.printSignedMessage,
+	encryptMessageWithSecret: sign.encryptMessageWithSecret,
+	decryptMessageWithSecret: sign.decryptMessageWithSecret,
+	convertPublicKeyEd2Curve: sign.convertPublicKeyEd2Curve,
+	convertPrivateKeyEd2Curve: sign.convertPrivateKeyEd2Curve,
 	getPrivateAndPublicKeyFromSecret: keys.getPrivateAndPublicKeyFromSecret,
 	getRawPrivateAndPublicKeyFromSecret: keys.getRawPrivateAndPublicKeyFromSecret,
 	getAddressFromPublicKey: keys.getAddressFromPublicKey,
@@ -1522,6 +1530,7 @@ module.exports = {
  *
  */
 
+var ed2curve = require('ed2curve');
 var convert = require('./convert');
 var keys = require('./keys');
 
@@ -1575,14 +1584,60 @@ function verifyMessageWithPublicKey (signedMessage, publicKey) {
 	return naclInstance.decode_utf8(openSignature);
 }
 
+function convertPublicKeyEd2Curve (publicKey) {
+	return ed2curve.convertPublicKey(publicKey);
+
+}
+
+function convertPrivateKeyEd2Curve (privateKey) {
+	return ed2curve.convertSecretKey(privateKey);
+}
+
+function encryptMessageWithSecret (message, secret, recipientPublicKey) {
+
+	var senderPrivateKey = keys.getRawPrivateAndPublicKeyFromSecret(secret).privateKey;
+	var recipientPublicKeyBytes = convert.hexToBuffer(recipientPublicKey);
+	var message = naclInstance.encode_utf8(message);
+
+	var nonce = naclInstance.crypto_box_random_nonce();
+	var packet = naclInstance.crypto_box(message, nonce, convertPublicKeyEd2Curve(recipientPublicKeyBytes), convertPrivateKeyEd2Curve(senderPrivateKey));
+
+	var nonceHex = convert.bufferToHex(nonce);
+	var encryptedMessage = convert.bufferToHex(packet);
+
+	return {
+		nonce: nonceHex,
+		encryptedMessage: encryptedMessage
+	}
+
+}
+
+function decryptMessageWithSecret (packet, nonce, secret, senderPublicKey) {
+
+	var recipientPrivateKey = keys.getRawPrivateAndPublicKeyFromSecret(secret).privateKey;
+	var senderPublicKeyBytes = convert.hexToBuffer(senderPublicKey);
+	var packetBytes = convert.hexToBuffer(packet);
+	var nonceBytes = convert.hexToBuffer(nonce);
+
+	var decoded = naclInstance.crypto_box_open(packetBytes, nonceBytes, convertPublicKeyEd2Curve(senderPublicKeyBytes), convertPrivateKeyEd2Curve(recipientPrivateKey));
+
+	return naclInstance.decode_utf8(decoded);
+
+}
+
+
 module.exports = {
 	verifyMessageWithPublicKey: verifyMessageWithPublicKey,
 	signMessageWithSecret: signMessageWithSecret,
 	printSignedMessage: printSignedMessage,
-	signAndPrintMessage: signAndPrintMessage
+	signAndPrintMessage: signAndPrintMessage,
+	encryptMessageWithSecret: encryptMessageWithSecret,
+	decryptMessageWithSecret: decryptMessageWithSecret,
+	convertPublicKeyEd2Curve: convertPublicKeyEd2Curve,
+	convertPrivateKeyEd2Curve: convertPrivateKeyEd2Curve
 };
 
-},{"./convert":7,"./keys":10}],12:[function(require,module,exports){
+},{"./convert":7,"./keys":10,"ed2curve":85}],12:[function(require,module,exports){
 /*
  * Copyright © 2017 Lisk Foundation
  *
@@ -2187,7 +2242,7 @@ Entity.prototype.encode = function encode(data, enc, /* internal */ reporter) {
   return this._getEncoder(enc).encode(data, reporter);
 };
 
-},{"../asn1":19,"inherits":112,"vm":181}],21:[function(require,module,exports){
+},{"../asn1":19,"inherits":112,"vm":182}],21:[function(require,module,exports){
 var inherits = require('inherits');
 var Reporter = require('../base').Reporter;
 var Buffer = require('buffer').Buffer;
@@ -2305,7 +2360,7 @@ EncoderBuffer.prototype.join = function join(out, offset) {
   return out;
 };
 
-},{"../base":22,"buffer":65,"inherits":112}],22:[function(require,module,exports){
+},{"../base":22,"buffer":65,"inherits":113}],22:[function(require,module,exports){
 var base = exports;
 
 base.Reporter = require('./reporter').Reporter;
@@ -2949,7 +3004,7 @@ Node.prototype._isPrintstr = function isPrintstr(str) {
   return /^[A-Za-z0-9 '\(\)\+,\-\.\/:=\?]*$/.test(str);
 };
 
-},{"../base":22,"minimalistic-assert":120}],24:[function(require,module,exports){
+},{"../base":22,"minimalistic-assert":121}],24:[function(require,module,exports){
 var inherits = require('inherits');
 
 function Reporter(options) {
@@ -3072,7 +3127,7 @@ ReporterError.prototype.rethrow = function rethrow(msg) {
   return this;
 };
 
-},{"inherits":112}],25:[function(require,module,exports){
+},{"inherits":113}],25:[function(require,module,exports){
 var constants = require('../constants');
 
 exports.tagClass = {
@@ -3463,7 +3518,7 @@ function derDecodeLen(buf, primitive, fail) {
   return len;
 }
 
-},{"../../asn1":19,"inherits":112}],28:[function(require,module,exports){
+},{"../../asn1":19,"inherits":113}],28:[function(require,module,exports){
 var decoders = exports;
 
 decoders.der = require('./der');
@@ -3520,7 +3575,7 @@ PEMDecoder.prototype.decode = function decode(data, options) {
   return DERDecoder.prototype.decode.call(this, input, options);
 };
 
-},{"./der":27,"buffer":65,"inherits":112}],30:[function(require,module,exports){
+},{"./der":27,"buffer":65,"inherits":113}],30:[function(require,module,exports){
 var inherits = require('inherits');
 var Buffer = require('buffer').Buffer;
 
@@ -3817,7 +3872,7 @@ function encodeTag(tag, primitive, cls, reporter) {
   return res;
 }
 
-},{"../../asn1":19,"buffer":65,"inherits":112}],31:[function(require,module,exports){
+},{"../../asn1":19,"buffer":65,"inherits":113}],31:[function(require,module,exports){
 var encoders = exports;
 
 encoders.der = require('./der');
@@ -3846,7 +3901,7 @@ PEMEncoder.prototype.encode = function encode(data, options) {
   return out.join('\n');
 };
 
-},{"./der":30,"inherits":112}],33:[function(require,module,exports){
+},{"./der":30,"inherits":113}],33:[function(require,module,exports){
 'use strict'
 
 exports.byteLength = byteLength
@@ -7742,7 +7797,7 @@ function xorTest (a, b) {
 }
 
 }).call(this,require("buffer").Buffer)
-},{"./aes":37,"./ghash":42,"buffer":65,"buffer-xor":64,"cipher-base":67,"inherits":112}],39:[function(require,module,exports){
+},{"./aes":37,"./ghash":42,"buffer":65,"buffer-xor":64,"cipher-base":67,"inherits":113}],39:[function(require,module,exports){
 var ciphers = require('./encrypter')
 exports.createCipher = exports.Cipher = ciphers.createCipher
 exports.createCipheriv = exports.Cipheriv = ciphers.createCipheriv
@@ -7896,7 +7951,7 @@ exports.createDecipher = createDecipher
 exports.createDecipheriv = createDecipheriv
 
 }).call(this,require("buffer").Buffer)
-},{"./aes":37,"./authCipher":38,"./modes":43,"./modes/cbc":44,"./modes/cfb":45,"./modes/cfb1":46,"./modes/cfb8":47,"./modes/ctr":48,"./modes/ecb":49,"./modes/ofb":50,"./streamCipher":51,"buffer":65,"cipher-base":67,"evp_bytestokey":102,"inherits":112}],41:[function(require,module,exports){
+},{"./aes":37,"./authCipher":38,"./modes":43,"./modes/cbc":44,"./modes/cfb":45,"./modes/cfb1":46,"./modes/cfb8":47,"./modes/ctr":48,"./modes/ecb":49,"./modes/ofb":50,"./streamCipher":51,"buffer":65,"cipher-base":67,"evp_bytestokey":103,"inherits":113}],41:[function(require,module,exports){
 (function (Buffer){
 var aes = require('./aes')
 var Transform = require('cipher-base')
@@ -8022,7 +8077,7 @@ exports.createCipheriv = createCipheriv
 exports.createCipher = createCipher
 
 }).call(this,require("buffer").Buffer)
-},{"./aes":37,"./authCipher":38,"./modes":43,"./modes/cbc":44,"./modes/cfb":45,"./modes/cfb1":46,"./modes/cfb8":47,"./modes/ctr":48,"./modes/ecb":49,"./modes/ofb":50,"./streamCipher":51,"buffer":65,"cipher-base":67,"evp_bytestokey":102,"inherits":112}],42:[function(require,module,exports){
+},{"./aes":37,"./authCipher":38,"./modes":43,"./modes/cbc":44,"./modes/cfb":45,"./modes/cfb1":46,"./modes/cfb8":47,"./modes/ctr":48,"./modes/ecb":49,"./modes/ofb":50,"./streamCipher":51,"buffer":65,"cipher-base":67,"evp_bytestokey":103,"inherits":113}],42:[function(require,module,exports){
 (function (Buffer){
 var zeros = new Buffer(16)
 zeros.fill(0)
@@ -8500,7 +8555,7 @@ StreamCipher.prototype._final = function () {
 }
 
 }).call(this,require("buffer").Buffer)
-},{"./aes":37,"buffer":65,"cipher-base":67,"inherits":112}],52:[function(require,module,exports){
+},{"./aes":37,"buffer":65,"cipher-base":67,"inherits":113}],52:[function(require,module,exports){
 (function (Buffer){
 /* bignumber.js v1.3.0 https://github.com/MikeMcl/bignumber.js/LICENCE */
 
@@ -10693,7 +10748,7 @@ function getCiphers () {
 }
 exports.listCiphers = exports.getCiphers = getCiphers
 
-},{"browserify-aes/browser":39,"browserify-aes/modes":43,"browserify-des":54,"browserify-des/modes":55,"evp_bytestokey":102}],54:[function(require,module,exports){
+},{"browserify-aes/browser":39,"browserify-aes/modes":43,"browserify-des":54,"browserify-des/modes":55,"evp_bytestokey":103}],54:[function(require,module,exports){
 (function (Buffer){
 var CipherBase = require('cipher-base')
 var des = require('des.js')
@@ -10740,7 +10795,7 @@ DES.prototype._final = function () {
 }
 
 }).call(this,require("buffer").Buffer)
-},{"buffer":65,"cipher-base":67,"des.js":75,"inherits":112}],55:[function(require,module,exports){
+},{"buffer":65,"cipher-base":67,"des.js":75,"inherits":113}],55:[function(require,module,exports){
 exports['des-ecb'] = {
   key: 8,
   iv: 0
@@ -10993,7 +11048,7 @@ module.exports = {
 }
 
 }).call(this,require("buffer").Buffer)
-},{"./algos":57,"./sign":60,"./verify":61,"buffer":65,"create-hash":70,"inherits":112,"stream":176}],59:[function(require,module,exports){
+},{"./algos":57,"./sign":60,"./verify":61,"buffer":65,"create-hash":70,"inherits":112,"stream":177}],59:[function(require,module,exports){
 'use strict'
 exports['1.3.132.0.10'] = 'secp256k1'
 
@@ -11196,7 +11251,7 @@ module.exports.getKey = getKey
 module.exports.makeKey = makeKey
 
 }).call(this,require("buffer").Buffer)
-},{"./curves":59,"bn.js":34,"browserify-rsa":56,"buffer":65,"create-hmac":73,"elliptic":85,"parse-asn1":125}],61:[function(require,module,exports){
+},{"./curves":59,"bn.js":34,"browserify-rsa":56,"buffer":65,"create-hmac":73,"elliptic":85,"parse-asn1":126}],61:[function(require,module,exports){
 (function (Buffer){
 // much of this based on https://github.com/indutny/self-signed/blob/gh-pages/lib/rsa.js
 var curves = require('./curves')
@@ -11303,7 +11358,7 @@ function checkValue (b, q) {
 module.exports = verify
 
 }).call(this,require("buffer").Buffer)
-},{"./curves":59,"bn.js":34,"buffer":65,"elliptic":85,"parse-asn1":125}],62:[function(require,module,exports){
+},{"./curves":59,"bn.js":34,"buffer":65,"elliptic":85,"parse-asn1":126}],62:[function(require,module,exports){
 arguments[4][36][0].apply(exports,arguments)
 },{"dup":36}],63:[function(require,module,exports){
 (function (global){
@@ -16946,32 +17001,6 @@ function isnan (val) {
         return sd();
     };
 
-    /**
-     * Decodes an UTF8 encoded string to a ByteBuffer.
-     * @param {string} str String to decode
-     * @param {boolean=} littleEndian Whether to use little or big endian byte order. Defaults to
-     *  {@link ByteBuffer.DEFAULT_ENDIAN}.
-     * @param {boolean=} noAssert Whether to skip assertions of offsets and values. Defaults to
-     *  {@link ByteBuffer.DEFAULT_NOASSERT}.
-     * @returns {!ByteBuffer} ByteBuffer
-     * @expose
-     */
-    ByteBuffer.fromUTF8 = function(str, littleEndian, noAssert) {
-        if (!noAssert)
-            if (typeof str !== 'string')
-                throw TypeError("Illegal str: Not a string");
-        var bb = new ByteBuffer(utfx.calculateUTF16asUTF8(stringSource(str), true)[1], littleEndian, noAssert),
-            i = 0;
-        utfx.encodeUTF16toUTF8(stringSource(str), function(b) {
-            bb.view[i++] = b;
-        });
-        bb.limit = i;
-        return bb;
-    };
-
-    return ByteBuffer;
-});
-
 },{"long":116}],67:[function(require,module,exports){
 (function (Buffer){
 var Transform = require('stream').Transform
@@ -17066,7 +17095,7 @@ CipherBase.prototype._toString = function (value, enc, fin) {
 }
 
 }).call(this,require("buffer").Buffer)
-},{"buffer":65,"inherits":112,"stream":176,"string_decoder":177}],68:[function(require,module,exports){
+},{"buffer":65,"inherits":112,"stream":177,"string_decoder":178}],68:[function(require,module,exports){
 (function (Buffer){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -17177,7 +17206,7 @@ function objectToString(o) {
 }
 
 }).call(this,{"isBuffer":require("../../is-buffer/index.js")})
-},{"../../is-buffer/index.js":113}],69:[function(require,module,exports){
+},{"../../is-buffer/index.js":114}],69:[function(require,module,exports){
 (function (Buffer){
 var elliptic = require('elliptic');
 var BN = require('bn.js');
@@ -17303,7 +17332,7 @@ function formatReturnValue(bn, enc, len) {
 }
 
 }).call(this,require("buffer").Buffer)
-},{"bn.js":34,"buffer":65,"elliptic":85}],70:[function(require,module,exports){
+},{"bn.js":34,"buffer":65,"elliptic":86}],70:[function(require,module,exports){
 (function (Buffer){
 'use strict';
 var inherits = require('inherits')
@@ -17359,7 +17388,7 @@ module.exports = function createHash (alg) {
 }
 
 }).call(this,require("buffer").Buffer)
-},{"./md5":72,"buffer":65,"cipher-base":67,"inherits":112,"ripemd160":167,"sha.js":169}],71:[function(require,module,exports){
+},{"./md5":72,"buffer":65,"cipher-base":67,"inherits":112,"ripemd160":168,"sha.js":170}],71:[function(require,module,exports){
 (function (Buffer){
 'use strict';
 var intSize = 4;
@@ -17625,7 +17654,7 @@ module.exports = function createHmac(alg, key) {
 }
 
 }).call(this,require("buffer").Buffer)
-},{"buffer":65,"create-hash/browser":70,"inherits":112,"stream":176}],74:[function(require,module,exports){
+},{"buffer":65,"create-hash/browser":70,"inherits":112,"stream":177}],74:[function(require,module,exports){
 'use strict'
 
 exports.randomBytes = exports.rng = exports.pseudoRandomBytes = exports.prng = require('randombytes')
@@ -17780,7 +17809,7 @@ proto._update = function _update(inp, inOff, out, outOff) {
   }
 };
 
-},{"inherits":112,"minimalistic-assert":120}],77:[function(require,module,exports){
+},{"inherits":113,"minimalistic-assert":121}],77:[function(require,module,exports){
 'use strict';
 
 var assert = require('minimalistic-assert');
@@ -17923,7 +17952,7 @@ Cipher.prototype._finalDecrypt = function _finalDecrypt() {
   return this._unpad(out);
 };
 
-},{"minimalistic-assert":120}],78:[function(require,module,exports){
+},{"minimalistic-assert":121}],78:[function(require,module,exports){
 'use strict';
 
 var assert = require('minimalistic-assert');
@@ -18068,7 +18097,7 @@ DES.prototype._decrypt = function _decrypt(state, lStart, rStart, out, off) {
   utils.rip(l, r, out, off);
 };
 
-},{"../des":75,"inherits":112,"minimalistic-assert":120}],79:[function(require,module,exports){
+},{"../des":75,"inherits":113,"minimalistic-assert":121}],79:[function(require,module,exports){
 'use strict';
 
 var assert = require('minimalistic-assert');
@@ -18125,7 +18154,7 @@ EDE.prototype._update = function _update(inp, inOff, out, outOff) {
 EDE.prototype._pad = DES.prototype._pad;
 EDE.prototype._unpad = DES.prototype._unpad;
 
-},{"../des":75,"inherits":112,"minimalistic-assert":120}],80:[function(require,module,exports){
+},{"../des":75,"inherits":113,"minimalistic-assert":121}],80:[function(require,module,exports){
 'use strict';
 
 exports.readUInt32BE = function readUInt32BE(bytes, off) {
@@ -18597,7 +18626,7 @@ function formatReturnValue(bn, enc) {
 }
 
 }).call(this,require("buffer").Buffer)
-},{"./generatePrime":83,"bn.js":34,"buffer":65,"miller-rabin":119,"randombytes":155}],83:[function(require,module,exports){
+},{"./generatePrime":83,"bn.js":34,"buffer":65,"miller-rabin":119,"randombytes":156}],83:[function(require,module,exports){
 var randomBytes = require('randombytes');
 module.exports = findPrime;
 findPrime.simpleSieve = simpleSieve;
@@ -18704,7 +18733,7 @@ function findPrime(bits, gen) {
 
 }
 
-},{"bn.js":34,"miller-rabin":119,"randombytes":155}],84:[function(require,module,exports){
+},{"bn.js":34,"miller-rabin":119,"randombytes":156}],84:[function(require,module,exports){
 module.exports={
     "modp1": {
         "gen": "02",
@@ -18740,6 +18769,266 @@ module.exports={
     }
 }
 },{}],85:[function(require,module,exports){
+/*
+ * ed2curve: convert Ed25519 signing key pair into Curve25519
+ * key pair suitable for Diffie-Hellman key exchange.
+ *
+ * Written by Dmitry Chestnykh in 2014. Public domain.
+ */
+/* jshint newcap: false */
+(function(root, f) {
+  'use strict';
+  if (typeof module !== 'undefined' && module.exports) module.exports = f(require('tweetnacl/nacl-fast'));
+  else root.ed2curve = f(root.nacl);
+}(this, function(nacl) {
+  'use strict';
+  if (!nacl) throw new Error('tweetnacl not loaded');
+
+  // -- Operations copied from TweetNaCl.js. --
+
+  var gf = function(init) {
+    var i, r = new Float64Array(16);
+    if (init) for (i = 0; i < init.length; i++) r[i] = init[i];
+    return r;
+  };
+
+  var gf0 = gf(),
+      gf1 = gf([1]),
+      D = gf([0x78a3, 0x1359, 0x4dca, 0x75eb, 0xd8ab, 0x4141, 0x0a4d, 0x0070, 0xe898, 0x7779, 0x4079, 0x8cc7, 0xfe73, 0x2b6f, 0x6cee, 0x5203]),
+      I = gf([0xa0b0, 0x4a0e, 0x1b27, 0xc4ee, 0xe478, 0xad2f, 0x1806, 0x2f43, 0xd7a7, 0x3dfb, 0x0099, 0x2b4d, 0xdf0b, 0x4fc1, 0x2480, 0x2b83]);
+
+
+
+  function car25519(o) {
+    var c;
+    var i;
+    for (i = 0; i < 16; i++) {
+      o[i] += 65536;
+      c = Math.floor(o[i] / 65536);
+      o[(i+1)*(i<15?1:0)] += c - 1 + 37 * (c-1) * (i===15?1:0);
+      o[i] -= (c * 65536);
+    }
+  }
+
+  function sel25519(p, q, b) {
+    var t, c = ~(b-1);
+    for (var i = 0; i < 16; i++) {
+      t = c & (p[i] ^ q[i]);
+      p[i] ^= t;
+      q[i] ^= t;
+    }
+  }
+
+  function unpack25519(o, n) {
+    var i;
+    for (i = 0; i < 16; i++) o[i] = n[2*i] + (n[2*i+1] << 8);
+    o[15] &= 0x7fff;
+  }
+
+  // addition
+  function A(o, a, b) {
+    var i;
+    for (i = 0; i < 16; i++) o[i] = (a[i] + b[i])|0;
+  }
+
+  // subtraction
+  function Z(o, a, b) {
+    var i;
+    for (i = 0; i < 16; i++) o[i] = (a[i] - b[i])|0;
+  }
+
+  // multiplication
+  function M(o, a, b) {
+    var i, j, t = new Float64Array(31);
+    for (i = 0; i < 31; i++) t[i] = 0;
+    for (i = 0; i < 16; i++) {
+      for (j = 0; j < 16; j++) {
+        t[i+j] += a[i] * b[j];
+      }
+    }
+    for (i = 0; i < 15; i++) {
+      t[i] += 38 * t[i+16];
+    }
+    for (i = 0; i < 16; i++) o[i] = t[i];
+    car25519(o);
+    car25519(o);
+  }
+
+  // squaring
+  function S(o, a) {
+    M(o, a, a);
+  }
+
+  // inversion
+  function inv25519(o, i) {
+    var c = gf();
+    var a;
+    for (a = 0; a < 16; a++) c[a] = i[a];
+    for (a = 253; a >= 0; a--) {
+      S(c, c);
+      if(a !== 2 && a !== 4) M(c, c, i);
+    }
+    for (a = 0; a < 16; a++) o[a] = c[a];
+  }
+
+  function pack25519(o, n) {
+    var i, j, b;
+    var m = gf(), t = gf();
+    for (i = 0; i < 16; i++) t[i] = n[i];
+    car25519(t);
+    car25519(t);
+    car25519(t);
+    for (j = 0; j < 2; j++) {
+      m[0] = t[0] - 0xffed;
+      for (i = 1; i < 15; i++) {
+        m[i] = t[i] - 0xffff - ((m[i-1]>>16) & 1);
+        m[i-1] &= 0xffff;
+      }
+      m[15] = t[15] - 0x7fff - ((m[14]>>16) & 1);
+      b = (m[15]>>16) & 1;
+      m[14] &= 0xffff;
+      sel25519(t, m, 1-b);
+    }
+    for (i = 0; i < 16; i++) {
+      o[2*i] = t[i] & 0xff;
+      o[2*i+1] = t[i] >> 8;
+    }
+  }
+
+
+  function par25519(a) {
+    var d = new Uint8Array(32);
+    pack25519(d, a);
+    return d[0] & 1;
+  }
+
+
+
+  function vn(x, xi, y, yi, n) {
+    var i, d = 0;
+    for (i = 0; i < n; i++) d |= x[xi + i] ^ y[yi + i];
+    return (1 & ((d - 1) >>> 8)) - 1;
+  }
+
+
+  function crypto_verify_32(x, xi, y, yi) {
+    return vn(x, xi, y, yi, 32);
+  }
+
+  function neq25519(a, b) {
+    var c = new Uint8Array(32), d = new Uint8Array(32);
+    pack25519(c, a);
+    pack25519(d, b);
+    return crypto_verify_32(c, 0, d, 0);
+  }
+
+
+  function pow2523(o, i) {
+    var c = gf();
+    var a;
+    for (a = 0; a < 16; a++) c[a] = i[a];
+    for (a = 250; a >= 0; a--) {
+      S(c, c);
+      if (a !== 1) M(c, c, i);
+    }
+    for (a = 0; a < 16; a++) o[a] = c[a];
+  }
+
+  function set25519(r, a) {
+    var i;
+    for (i = 0; i < 16; i++) r[i] = a[i] | 0;
+  }
+
+  function unpackneg(r, p) {
+    var t = gf(), chk = gf(), num = gf(),
+      den = gf(), den2 = gf(), den4 = gf(),
+      den6 = gf();
+
+    set25519(r[2], gf1);
+    unpack25519(r[1], p);
+    S(num, r[1]);
+    M(den, num, D);
+    Z(num, num, r[2]);
+    A(den, r[2], den);
+
+    S(den2, den);
+    S(den4, den2);
+    M(den6, den4, den2);
+    M(t, den6, num);
+    M(t, t, den);
+
+    pow2523(t, t);
+    M(t, t, num);
+    M(t, t, den);
+    M(t, t, den);
+    M(r[0], t, den);
+
+    S(chk, r[0]);
+    M(chk, chk, den);
+    if (neq25519(chk, num)) M(r[0], r[0], I);
+
+    S(chk, r[0]);
+    M(chk, chk, den);
+    if (neq25519(chk, num)) return -1;
+
+    if (par25519(r[0]) === (p[31] >> 7)) Z(r[0], gf0, r[0]);
+
+    M(r[3], r[0], r[1]);
+    return 0;
+  }
+
+  // ----
+
+  // Converts Ed25519 public key to Curve25519 public key.
+  // montgomeryX = (edwardsY + 1)*inverse(1 - edwardsY) mod p
+  function convertPublicKey(pk) {
+    var z = new Uint8Array(32),
+      q = [gf(), gf(), gf(), gf()],
+      a = gf(), b = gf();
+
+    if (unpackneg(q, pk)) return null; // reject invalid key
+
+    var y = q[1];
+
+    A(a, gf1, y);
+    Z(b, gf1, y);
+    inv25519(b, b);
+    M(a, a, b);
+
+    pack25519(z, a);
+    return z;
+  }
+
+  // Converts Ed25519 secret key to Curve25519 secret key.
+  function convertSecretKey(sk) {
+    var d = new Uint8Array(64), o = new Uint8Array(32), i;
+    nacl.lowlevel.crypto_hash(d, sk, 32);
+    d[0] &= 248;
+    d[31] &= 127;
+    d[31] |= 64;
+    for (i = 0; i < 32; i++) o[i] = d[i];
+    for (i = 0; i < 64; i++) d[i] = 0;
+    return o;
+  }
+
+  function convertKeyPair(edKeyPair) {
+    var publicKey = convertPublicKey(edKeyPair.publicKey);
+    if (!publicKey) return null;
+    return {
+      publicKey: publicKey,
+      secretKey: convertSecretKey(edKeyPair.secretKey)
+    };
+  }
+
+  return {
+    convertPublicKey: convertPublicKey,
+    convertSecretKey: convertSecretKey,
+    convertKeyPair: convertKeyPair,
+  };
+
+}));
+
+},{"tweetnacl/nacl-fast":179}],86:[function(require,module,exports){
 'use strict';
 
 var elliptic = exports;
@@ -18754,7 +19043,7 @@ elliptic.curves = require('./elliptic/curves');
 elliptic.ec = require('./elliptic/ec');
 elliptic.eddsa = require('./elliptic/eddsa');
 
-},{"../package.json":100,"./elliptic/curve":88,"./elliptic/curves":91,"./elliptic/ec":92,"./elliptic/eddsa":95,"./elliptic/utils":99,"brorand":35}],86:[function(require,module,exports){
+},{"../package.json":101,"./elliptic/curve":89,"./elliptic/curves":92,"./elliptic/ec":93,"./elliptic/eddsa":96,"./elliptic/utils":100,"brorand":35}],87:[function(require,module,exports){
 'use strict';
 
 var BN = require('bn.js');
@@ -19131,7 +19420,7 @@ BasePoint.prototype.dblp = function dblp(k) {
   return r;
 };
 
-},{"../../elliptic":85,"bn.js":34}],87:[function(require,module,exports){
+},{"../../elliptic":86,"bn.js":34}],88:[function(require,module,exports){
 'use strict';
 
 var curve = require('../curve');
@@ -19566,7 +19855,7 @@ Point.prototype.eqXToP = function eqXToP(x) {
 Point.prototype.toP = Point.prototype.normalize;
 Point.prototype.mixedAdd = Point.prototype.add;
 
-},{"../../elliptic":85,"../curve":88,"bn.js":34,"inherits":112}],88:[function(require,module,exports){
+},{"../../elliptic":86,"../curve":89,"bn.js":34,"inherits":113}],89:[function(require,module,exports){
 'use strict';
 
 var curve = exports;
@@ -19576,7 +19865,7 @@ curve.short = require('./short');
 curve.mont = require('./mont');
 curve.edwards = require('./edwards');
 
-},{"./base":86,"./edwards":87,"./mont":89,"./short":90}],89:[function(require,module,exports){
+},{"./base":87,"./edwards":88,"./mont":90,"./short":91}],90:[function(require,module,exports){
 'use strict';
 
 var curve = require('../curve');
@@ -19758,7 +20047,7 @@ Point.prototype.getX = function getX() {
   return this.x.fromRed();
 };
 
-},{"../../elliptic":85,"../curve":88,"bn.js":34,"inherits":112}],90:[function(require,module,exports){
+},{"../../elliptic":86,"../curve":89,"bn.js":34,"inherits":113}],91:[function(require,module,exports){
 'use strict';
 
 var curve = require('../curve');
@@ -20698,7 +20987,7 @@ JPoint.prototype.isInfinity = function isInfinity() {
   return this.z.cmpn(0) === 0;
 };
 
-},{"../../elliptic":85,"../curve":88,"bn.js":34,"inherits":112}],91:[function(require,module,exports){
+},{"../../elliptic":86,"../curve":89,"bn.js":34,"inherits":113}],92:[function(require,module,exports){
 'use strict';
 
 var curves = exports;
@@ -20905,7 +21194,7 @@ defineCurve('secp256k1', {
   ]
 });
 
-},{"../elliptic":85,"./precomputed/secp256k1":98,"hash.js":103}],92:[function(require,module,exports){
+},{"../elliptic":86,"./precomputed/secp256k1":99,"hash.js":104}],93:[function(require,module,exports){
 'use strict';
 
 var BN = require('bn.js');
@@ -21147,7 +21436,7 @@ EC.prototype.getKeyRecoveryParam = function(e, signature, Q, enc) {
   throw new Error('Unable to find valid recovery factor');
 };
 
-},{"../../elliptic":85,"./key":93,"./signature":94,"bn.js":34,"hmac-drbg":109}],93:[function(require,module,exports){
+},{"../../elliptic":86,"./key":94,"./signature":95,"bn.js":34,"hmac-drbg":110}],94:[function(require,module,exports){
 'use strict';
 
 var BN = require('bn.js');
@@ -21268,7 +21557,7 @@ KeyPair.prototype.inspect = function inspect() {
          ' pub: ' + (this.pub && this.pub.inspect()) + ' >';
 };
 
-},{"../../elliptic":85,"bn.js":34}],94:[function(require,module,exports){
+},{"../../elliptic":86,"bn.js":34}],95:[function(require,module,exports){
 'use strict';
 
 var BN = require('bn.js');
@@ -21405,7 +21694,7 @@ Signature.prototype.toDER = function toDER(enc) {
   return utils.encode(res, enc);
 };
 
-},{"../../elliptic":85,"bn.js":34}],95:[function(require,module,exports){
+},{"../../elliptic":86,"bn.js":34}],96:[function(require,module,exports){
 'use strict';
 
 var hash = require('hash.js');
@@ -21525,7 +21814,7 @@ EDDSA.prototype.isPoint = function isPoint(val) {
   return val instanceof this.pointClass;
 };
 
-},{"../../elliptic":85,"./key":96,"./signature":97,"hash.js":103}],96:[function(require,module,exports){
+},{"../../elliptic":86,"./key":97,"./signature":98,"hash.js":104}],97:[function(require,module,exports){
 'use strict';
 
 var elliptic = require('../../elliptic');
@@ -21623,7 +21912,7 @@ KeyPair.prototype.getPublic = function getPublic(enc) {
 
 module.exports = KeyPair;
 
-},{"../../elliptic":85}],97:[function(require,module,exports){
+},{"../../elliptic":86}],98:[function(require,module,exports){
 'use strict';
 
 var BN = require('bn.js');
@@ -21691,7 +21980,7 @@ Signature.prototype.toHex = function toHex() {
 
 module.exports = Signature;
 
-},{"../../elliptic":85,"bn.js":34}],98:[function(require,module,exports){
+},{"../../elliptic":86,"bn.js":34}],99:[function(require,module,exports){
 module.exports = {
   doubles: {
     step: 4,
@@ -22473,7 +22762,7 @@ module.exports = {
   }
 };
 
-},{}],99:[function(require,module,exports){
+},{}],100:[function(require,module,exports){
 'use strict';
 
 var utils = exports;
@@ -22595,7 +22884,7 @@ function intFromLE(bytes) {
 utils.intFromLE = intFromLE;
 
 
-},{"bn.js":34,"minimalistic-assert":120,"minimalistic-crypto-utils":121}],100:[function(require,module,exports){
+},{"bn.js":34,"minimalistic-assert":121,"minimalistic-crypto-utils":122}],101:[function(require,module,exports){
 module.exports={
   "_args": [
     [
@@ -22719,7 +23008,7 @@ module.exports={
   "version": "6.4.0"
 }
 
-},{}],101:[function(require,module,exports){
+},{}],102:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -23023,7 +23312,7 @@ function isUndefined(arg) {
   return arg === void 0;
 }
 
-},{}],102:[function(require,module,exports){
+},{}],103:[function(require,module,exports){
 (function (Buffer){
 var md5 = require('create-hash/md5')
 module.exports = EVP_BytesToKey
@@ -23095,7 +23384,7 @@ function EVP_BytesToKey (password, salt, keyLen, ivLen) {
 }
 
 }).call(this,require("buffer").Buffer)
-},{"buffer":65,"create-hash/md5":72}],103:[function(require,module,exports){
+},{"buffer":65,"create-hash/md5":72}],104:[function(require,module,exports){
 var hash = exports;
 
 hash.utils = require('./hash/utils');
@@ -23112,7 +23401,7 @@ hash.sha384 = hash.sha.sha384;
 hash.sha512 = hash.sha.sha512;
 hash.ripemd160 = hash.ripemd.ripemd160;
 
-},{"./hash/common":104,"./hash/hmac":105,"./hash/ripemd":106,"./hash/sha":107,"./hash/utils":108}],104:[function(require,module,exports){
+},{"./hash/common":105,"./hash/hmac":106,"./hash/ripemd":107,"./hash/sha":108,"./hash/utils":109}],105:[function(require,module,exports){
 var hash = require('../hash');
 var utils = hash.utils;
 var assert = utils.assert;
@@ -23205,7 +23494,7 @@ BlockHash.prototype._pad = function pad() {
   return res;
 };
 
-},{"../hash":103}],105:[function(require,module,exports){
+},{"../hash":104}],106:[function(require,module,exports){
 var hmac = exports;
 
 var hash = require('../hash');
@@ -23255,7 +23544,7 @@ Hmac.prototype.digest = function digest(enc) {
   return this.outer.digest(enc);
 };
 
-},{"../hash":103}],106:[function(require,module,exports){
+},{"../hash":104}],107:[function(require,module,exports){
 var hash = require('../hash');
 var utils = hash.utils;
 
@@ -23401,7 +23690,7 @@ var sh = [
   8, 5, 12, 9, 12, 5, 14, 6, 8, 13, 6, 5, 15, 13, 11, 11
 ];
 
-},{"../hash":103}],107:[function(require,module,exports){
+},{"../hash":104}],108:[function(require,module,exports){
 var hash = require('../hash');
 var utils = hash.utils;
 var assert = utils.assert;
@@ -23967,7 +24256,7 @@ function g1_512_lo(xh, xl) {
   return r;
 }
 
-},{"../hash":103}],108:[function(require,module,exports){
+},{"../hash":104}],109:[function(require,module,exports){
 var utils = exports;
 var inherits = require('inherits');
 
@@ -24226,7 +24515,7 @@ function shr64_lo(ah, al, num) {
 };
 exports.shr64_lo = shr64_lo;
 
-},{"inherits":112}],109:[function(require,module,exports){
+},{"inherits":113}],110:[function(require,module,exports){
 'use strict';
 
 var hash = require('hash.js');
@@ -24341,7 +24630,7 @@ HmacDRBG.prototype.generate = function generate(len, enc, add, addEnc) {
   return utils.encode(res, enc);
 };
 
-},{"hash.js":103,"minimalistic-assert":120,"minimalistic-crypto-utils":121}],110:[function(require,module,exports){
+},{"hash.js":104,"minimalistic-assert":121,"minimalistic-crypto-utils":122}],111:[function(require,module,exports){
 exports.read = function (buffer, offset, isLE, mLen, nBytes) {
   var e, m
   var eLen = nBytes * 8 - mLen - 1
@@ -24427,7 +24716,7 @@ exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
   buffer[offset + i - d] |= s * 128
 }
 
-},{}],111:[function(require,module,exports){
+},{}],112:[function(require,module,exports){
 
 var indexOf = [].indexOf;
 
@@ -24438,7 +24727,7 @@ module.exports = function(arr, obj){
   }
   return -1;
 };
-},{}],112:[function(require,module,exports){
+},{}],113:[function(require,module,exports){
 if (typeof Object.create === 'function') {
   // implementation from standard node.js 'util' module
   module.exports = function inherits(ctor, superCtor) {
@@ -24463,7 +24752,7 @@ if (typeof Object.create === 'function') {
   }
 }
 
-},{}],113:[function(require,module,exports){
+},{}],114:[function(require,module,exports){
 /*!
  * Determine if an object is a Buffer
  *
@@ -24486,14 +24775,14 @@ function isSlowBuffer (obj) {
   return typeof obj.readFloatLE === 'function' && typeof obj.slice === 'function' && isBuffer(obj.slice(0, 0))
 }
 
-},{}],114:[function(require,module,exports){
+},{}],115:[function(require,module,exports){
 var toString = {}.toString;
 
 module.exports = Array.isArray || function (arr) {
   return toString.call(arr) == '[object Array]';
 };
 
-},{}],115:[function(require,module,exports){
+},{}],116:[function(require,module,exports){
 (function (process,__dirname){
 var nacl_factory = {
   instantiate: function (on_ready, optionsOpt) {
@@ -25089,7 +25378,7 @@ if (typeof module !== 'undefined' && module.exports) {
 }
 
 }).call(this,require('_process'),"/node_modules/js-nacl/lib")
-},{"_process":144,"crypto":74,"fs":62,"path":126}],116:[function(require,module,exports){
+},{"_process":145,"crypto":74,"fs":62,"path":127}],116:[function(require,module,exports){
 /*
  Copyright 2013 Daniel Wirtz <dcode@dcode.io>
  Copyright 2009 The Closure Library Authors. All Rights Reserved.
@@ -26329,7 +26618,7 @@ var makeErrorCause;
 })(makeErrorCause || (makeErrorCause = {}));
 module.exports = makeErrorCause;
 
-},{"make-error":118}],118:[function(require,module,exports){
+},{"make-error":119}],119:[function(require,module,exports){
 // ISC @ Julien Fontanet
 
 'use strict'
@@ -26473,7 +26762,7 @@ function makeError (constructor, super_) {
 exports = module.exports = makeError
 exports.BaseError = BaseError
 
-},{}],119:[function(require,module,exports){
+},{}],120:[function(require,module,exports){
 var bn = require('bn.js');
 var brorand = require('brorand');
 
@@ -26588,7 +26877,7 @@ MillerRabin.prototype.getDivisor = function getDivisor(n, k) {
   return false;
 };
 
-},{"bn.js":34,"brorand":35}],120:[function(require,module,exports){
+},{"bn.js":34,"brorand":35}],121:[function(require,module,exports){
 module.exports = assert;
 
 function assert(val, msg) {
@@ -26601,7 +26890,7 @@ assert.equal = function assertEqual(l, r, msg) {
     throw new Error(msg || ('Assertion failed: ' + l + ' != ' + r));
 };
 
-},{}],121:[function(require,module,exports){
+},{}],122:[function(require,module,exports){
 'use strict';
 
 var utils = exports;
@@ -26661,7 +26950,7 @@ utils.encode = function encode(arr, enc) {
     return arr;
 };
 
-},{}],122:[function(require,module,exports){
+},{}],123:[function(require,module,exports){
 module.exports={"2.16.840.1.101.3.4.1.1": "aes-128-ecb",
 "2.16.840.1.101.3.4.1.2": "aes-128-cbc",
 "2.16.840.1.101.3.4.1.3": "aes-128-ofb",
@@ -26675,7 +26964,7 @@ module.exports={"2.16.840.1.101.3.4.1.1": "aes-128-ecb",
 "2.16.840.1.101.3.4.1.43": "aes-256-ofb",
 "2.16.840.1.101.3.4.1.44": "aes-256-cfb"
 }
-},{}],123:[function(require,module,exports){
+},{}],124:[function(require,module,exports){
 // from https://github.com/indutny/self-signed/blob/gh-pages/lib/asn1.js
 // Fedor, you are amazing.
 
@@ -26794,7 +27083,97 @@ exports.signature = asn1.define('signature', function () {
   )
 })
 
-},{"asn1.js":19}],124:[function(require,module,exports){
+},{"./certificate":124,"asn1.js":19}],124:[function(require,module,exports){
+// from https://github.com/Rantanen/node-dtls/blob/25a7dc861bda38cfeac93a723500eea4f0ac2e86/Certificate.js
+// thanks to @Rantanen
+
+'use strict'
+
+var asn = require('asn1.js')
+
+var Time = asn.define('Time', function () {
+  this.choice({
+    utcTime: this.utctime(),
+    generalTime: this.gentime()
+  })
+})
+
+var AttributeTypeValue = asn.define('AttributeTypeValue', function () {
+  this.seq().obj(
+    this.key('type').objid(),
+    this.key('value').any()
+  )
+})
+
+var AlgorithmIdentifier = asn.define('AlgorithmIdentifier', function () {
+  this.seq().obj(
+    this.key('algorithm').objid(),
+    this.key('parameters').optional()
+  )
+})
+
+var SubjectPublicKeyInfo = asn.define('SubjectPublicKeyInfo', function () {
+  this.seq().obj(
+    this.key('algorithm').use(AlgorithmIdentifier),
+    this.key('subjectPublicKey').bitstr()
+  )
+})
+
+var RelativeDistinguishedName = asn.define('RelativeDistinguishedName', function () {
+  this.setof(AttributeTypeValue)
+})
+
+var RDNSequence = asn.define('RDNSequence', function () {
+  this.seqof(RelativeDistinguishedName)
+})
+
+var Name = asn.define('Name', function () {
+  this.choice({
+    rdnSequence: this.use(RDNSequence)
+  })
+})
+
+var Validity = asn.define('Validity', function () {
+  this.seq().obj(
+    this.key('notBefore').use(Time),
+    this.key('notAfter').use(Time)
+  )
+})
+
+var Extension = asn.define('Extension', function () {
+  this.seq().obj(
+    this.key('extnID').objid(),
+    this.key('critical').bool().def(false),
+    this.key('extnValue').octstr()
+  )
+})
+
+var TBSCertificate = asn.define('TBSCertificate', function () {
+  this.seq().obj(
+    this.key('version').explicit(0).int(),
+    this.key('serialNumber').int(),
+    this.key('signature').use(AlgorithmIdentifier),
+    this.key('issuer').use(Name),
+    this.key('validity').use(Validity),
+    this.key('subject').use(Name),
+    this.key('subjectPublicKeyInfo').use(SubjectPublicKeyInfo),
+    this.key('issuerUniqueID').implicit(1).bitstr().optional(),
+    this.key('subjectUniqueID').implicit(2).bitstr().optional(),
+    this.key('extensions').explicit(3).seqof(Extension).optional()
+  )
+})
+
+var X509Certificate = asn.define('X509Certificate', function () {
+  this.seq().obj(
+    this.key('tbsCertificate').use(TBSCertificate),
+    this.key('signatureAlgorithm').use(AlgorithmIdentifier),
+    this.key('signatureValue').bitstr()
+  )
+})
+
+module.exports = X509Certificate
+
+},{"asn1.js":19}],125:[function(require,module,exports){
 (function (Buffer){
 // adapted from https://github.com/apatil/pemstrip
 var findProc = /Proc-Type: 4,ENCRYPTED\r?\nDEK-Info: AES-((?:128)|(?:192)|(?:256))-CBC,([0-9A-H]+)\r?\n\r?\n([0-9A-z\n\r\+\/\=]+)\r?\n/m
@@ -26828,7 +27207,7 @@ module.exports = function (okey, password) {
 }
 
 }).call(this,require("buffer").Buffer)
-},{"browserify-aes":39,"buffer":65,"evp_bytestokey":102}],125:[function(require,module,exports){
+},{"browserify-aes":39,"buffer":65,"evp_bytestokey":102}],126:[function(require,module,exports){
 (function (Buffer){
 var asn1 = require('./asn1')
 var aesid = require('./aesid.json')
@@ -26933,7 +27312,7 @@ function decrypt (data, password) {
 }
 
 }).call(this,require("buffer").Buffer)
-},{"./aesid.json":122,"./asn1":123,"./fixProc":124,"browserify-aes":39,"buffer":65,"pbkdf2":127}],126:[function(require,module,exports){
+},{"./aesid.json":122,"./asn1":123,"./fixProc":125,"browserify-aes":39,"buffer":65,"pbkdf2":128}],127:[function(require,module,exports){
 (function (process){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -27415,7 +27794,7 @@ var Base = (function () {
 }());
 exports.Base = Base;
 
-},{"./support":142,"querystring":154,"url":178}],130:[function(require,module,exports){
+},{"./support":143,"querystring":155,"url":179}],131:[function(require,module,exports){
 "use strict";
 var response_1 = require("./response");
 var index_1 = require("./plugins/index");
@@ -27599,7 +27978,7 @@ var PopsicleError = (function (_super) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = PopsicleError;
 
-},{"make-error-cause":117}],135:[function(require,module,exports){
+},{"make-error-cause":117}],136:[function(require,module,exports){
 "use strict";
 var FormData = require("form-data");
 function form(obj) {
@@ -29357,7 +29736,7 @@ function forEach(xs, f) {
     f(xs[i], i);
   }
 }
-},{"./_stream_readable":159,"./_stream_writable":161,"core-util-is":68,"inherits":112,"process-nextick-args":143}],158:[function(require,module,exports){
+},{"./_stream_readable":160,"./_stream_writable":162,"core-util-is":68,"inherits":112,"process-nextick-args":144}],159:[function(require,module,exports){
 // a passthrough stream.
 // basically just the most minimal sort of Transform stream.
 // Every written chunk gets output as-is.
@@ -29384,7 +29763,7 @@ function PassThrough(options) {
 PassThrough.prototype._transform = function (chunk, encoding, cb) {
   cb(null, chunk);
 };
-},{"./_stream_transform":160,"core-util-is":68,"inherits":112}],159:[function(require,module,exports){
+},{"./_stream_transform":161,"core-util-is":68,"inherits":112}],160:[function(require,module,exports){
 (function (process){
 'use strict';
 
@@ -30328,7 +30707,7 @@ function indexOf(xs, x) {
   return -1;
 }
 }).call(this,require('_process'))
-},{"./_stream_duplex":157,"./internal/streams/BufferList":162,"_process":144,"buffer":65,"buffer-shims":63,"core-util-is":68,"events":101,"inherits":112,"isarray":114,"process-nextick-args":143,"string_decoder/":177,"util":36}],160:[function(require,module,exports){
+},{"./_stream_duplex":158,"./internal/streams/BufferList":163,"_process":145,"buffer":65,"buffer-shims":63,"core-util-is":68,"events":101,"inherits":112,"isarray":114,"process-nextick-args":144,"string_decoder/":178,"util":36}],161:[function(require,module,exports){
 // a transform stream is a readable/writable stream where you do
 // something with the data.  Sometimes it's called a "filter",
 // but that's not a great name for it, since that implies a thing where
@@ -30511,7 +30890,7 @@ function done(stream, er, data) {
 
   return stream.push(null);
 }
-},{"./_stream_duplex":157,"core-util-is":68,"inherits":112}],161:[function(require,module,exports){
+},{"./_stream_duplex":158,"core-util-is":68,"inherits":112}],162:[function(require,module,exports){
 (function (process){
 // A bit simpler than readable streams.
 // Implement an async ._write(chunk, encoding, cb), and it'll handle all
@@ -31068,7 +31447,7 @@ function CorkedRequest(state) {
   };
 }
 }).call(this,require('_process'))
-},{"./_stream_duplex":157,"_process":144,"buffer":65,"buffer-shims":63,"core-util-is":68,"events":101,"inherits":112,"process-nextick-args":143,"util-deprecate":180}],162:[function(require,module,exports){
+},{"./_stream_duplex":158,"_process":145,"buffer":65,"buffer-shims":63,"core-util-is":68,"events":101,"inherits":112,"process-nextick-args":144,"util-deprecate":181}],163:[function(require,module,exports){
 'use strict';
 
 var Buffer = require('buffer').Buffer;
@@ -31563,7 +31942,7 @@ Sha.prototype._hash = function () {
 module.exports = Sha
 
 }).call(this,require("buffer").Buffer)
-},{"./hash":168,"buffer":65,"inherits":112}],171:[function(require,module,exports){
+},{"./hash":169,"buffer":65,"inherits":112}],172:[function(require,module,exports){
 (function (Buffer){
 /*
  * A JavaScript implementation of the Secure Hash Algorithm, SHA-1, as defined
@@ -31665,7 +32044,7 @@ Sha1.prototype._hash = function () {
 module.exports = Sha1
 
 }).call(this,require("buffer").Buffer)
-},{"./hash":168,"buffer":65,"inherits":112}],172:[function(require,module,exports){
+},{"./hash":169,"buffer":65,"inherits":112}],173:[function(require,module,exports){
 (function (Buffer){
 /**
  * A JavaScript implementation of the Secure Hash Algorithm, SHA-256, as defined
@@ -31721,7 +32100,7 @@ Sha224.prototype._hash = function () {
 module.exports = Sha224
 
 }).call(this,require("buffer").Buffer)
-},{"./hash":168,"./sha256":173,"buffer":65,"inherits":112}],173:[function(require,module,exports){
+},{"./hash":169,"./sha256":174,"buffer":65,"inherits":112}],174:[function(require,module,exports){
 (function (Buffer){
 /**
  * A JavaScript implementation of the Secure Hash Algorithm, SHA-256, as defined
@@ -31859,7 +32238,7 @@ Sha256.prototype._hash = function () {
 module.exports = Sha256
 
 }).call(this,require("buffer").Buffer)
-},{"./hash":168,"buffer":65,"inherits":112}],174:[function(require,module,exports){
+},{"./hash":169,"buffer":65,"inherits":112}],175:[function(require,module,exports){
 (function (Buffer){
 var inherits = require('inherits')
 var SHA512 = require('./sha512')
@@ -31919,7 +32298,7 @@ Sha384.prototype._hash = function () {
 module.exports = Sha384
 
 }).call(this,require("buffer").Buffer)
-},{"./hash":168,"./sha512":175,"buffer":65,"inherits":112}],175:[function(require,module,exports){
+},{"./hash":169,"./sha512":176,"buffer":65,"inherits":112}],176:[function(require,module,exports){
 (function (Buffer){
 var inherits = require('inherits')
 var Hash = require('./hash')
@@ -32182,7 +32561,7 @@ Sha512.prototype._hash = function () {
 module.exports = Sha512
 
 }).call(this,require("buffer").Buffer)
-},{"./hash":168,"buffer":65,"inherits":112}],176:[function(require,module,exports){
+},{"./hash":169,"buffer":65,"inherits":112}],177:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -32311,7 +32690,7 @@ Stream.prototype.pipe = function(dest, options) {
   return dest;
 };
 
-},{"events":101,"inherits":112,"readable-stream/duplex.js":156,"readable-stream/passthrough.js":163,"readable-stream/readable.js":164,"readable-stream/transform.js":165,"readable-stream/writable.js":166}],177:[function(require,module,exports){
+},{"events":101,"inherits":112,"readable-stream/duplex.js":157,"readable-stream/passthrough.js":164,"readable-stream/readable.js":165,"readable-stream/transform.js":166,"readable-stream/writable.js":167}],178:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -32534,7 +32913,7 @@ function base64DetectIncompleteChar(buffer) {
   this.charLength = this.charReceived ? 3 : 0;
 }
 
-},{"buffer":65}],178:[function(require,module,exports){
+},{"buffer":65}],179:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -33268,7 +33647,7 @@ Url.prototype.parseHost = function() {
   if (host) this.hostname = host;
 };
 
-},{"./util":179,"punycode":151,"querystring":154}],179:[function(require,module,exports){
+},{"./util":180,"punycode":152,"querystring":155}],180:[function(require,module,exports){
 'use strict';
 
 module.exports = {
@@ -33286,7 +33665,7 @@ module.exports = {
   }
 };
 
-},{}],180:[function(require,module,exports){
+},{}],181:[function(require,module,exports){
 (function (global){
 
 /**
@@ -33357,7 +33736,7 @@ function config (name) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],181:[function(require,module,exports){
+},{}],182:[function(require,module,exports){
 var indexOf = require('indexof');
 
 var Object_keys = function (obj) {
@@ -33497,7 +33876,1677 @@ exports.createContext = Script.createContext = function (context) {
     return copy;
 };
 
-},{"indexof":111}]},{},[1])(1)
+},{"indexof":112}]},{},[1])(1)
 });
 },{"./lib/api/liskApi":2,"./lib/transactions/crypto.js":6,"./lib/transactions/dapp.js":12,"./lib/transactions/delegate.js":13,"./lib/transactions/multisignature.js":14,"./lib/transactions/signature.js":15,"./lib/transactions/transaction.js":16,"./lib/transactions/vote.js":18,"js-nacl":115}],2:[function(require,module,exports){
 },{"../transactions/crypto":6,"./parseTransaction":3,"popsicle":133}],3:[function(require,module,exports){
+},{"../asn1":19,"inherits":112,"vm":181}],21:[function(require,module,exports){
+},{"./algos":57,"./sign":60,"./verify":61,"buffer":65,"create-hash":70,"inherits":112,"stream":176}],59:[function(require,module,exports){
+},{"./curves":59,"bn.js":34,"browserify-rsa":56,"buffer":65,"create-hmac":73,"elliptic":85,"parse-asn1":125}],61:[function(require,module,exports){
+},{"./curves":59,"bn.js":34,"buffer":65,"elliptic":85,"parse-asn1":125}],62:[function(require,module,exports){
+},{"base64-js":33,"ieee754":110,"isarray":114}],66:[function(require,module,exports){
+/*
+ Copyright 2013-2014 Daniel Wirtz <dcode@dcode.io>
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+ http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+ */
+
+/**
+ * @license bytebuffer.js (c) 2015 Daniel Wirtz <dcode@dcode.io>
+ * Backing buffer: ArrayBuffer, Accessor: Uint8Array
+ * Released under the Apache License, Version 2.0
+ * see: https://github.com/dcodeIO/bytebuffer.js for details
+ */
+(function(global, factory) {
+
+    /* AMD */ if (typeof define === 'function' && define["amd"])
+        define(["long"], factory);
+    /* CommonJS */ else if (typeof require === 'function' && typeof module === "object" && module && module["exports"])
+        module['exports'] = (function() {
+            var Long; try { Long = require("long"); } catch (e) {}
+            return factory(Long);
+        })();
+    /* Global */ else
+        (global["dcodeIO"] = global["dcodeIO"] || {})["ByteBuffer"] = factory(global["dcodeIO"]["Long"]);
+
+})(this, function(Long) {
+    "use strict";
+
+    /**
+     * Constructs a new ByteBuffer.
+     * @class The swiss army knife for binary data in JavaScript.
+     * @exports ByteBuffer
+     * @constructor
+     * @param {number=} capacity Initial capacity. Defaults to {@link ByteBuffer.DEFAULT_CAPACITY}.
+     * @param {boolean=} littleEndian Whether to use little or big endian byte order. Defaults to
+     *  {@link ByteBuffer.DEFAULT_ENDIAN}.
+     * @param {boolean=} noAssert Whether to skip assertions of offsets and values. Defaults to
+     *  {@link ByteBuffer.DEFAULT_NOASSERT}.
+     * @expose
+     */
+    var ByteBuffer = function(capacity, littleEndian, noAssert) {
+        if (typeof capacity === 'undefined')
+            capacity = ByteBuffer.DEFAULT_CAPACITY;
+        if (typeof littleEndian === 'undefined')
+            littleEndian = ByteBuffer.DEFAULT_ENDIAN;
+        if (typeof noAssert === 'undefined')
+            noAssert = ByteBuffer.DEFAULT_NOASSERT;
+        if (!noAssert) {
+            capacity = capacity | 0;
+            if (capacity < 0)
+                throw RangeError("Illegal capacity");
+            littleEndian = !!littleEndian;
+            noAssert = !!noAssert;
+        }
+
+        /**
+         * Backing ArrayBuffer.
+         * @type {!ArrayBuffer}
+         * @expose
+         */
+        this.buffer = capacity === 0 ? EMPTY_BUFFER : new ArrayBuffer(capacity);
+
+        /**
+         * Uint8Array utilized to manipulate the backing buffer. Becomes `null` if the backing buffer has a capacity of `0`.
+         * @type {?Uint8Array}
+         * @expose
+         */
+        this.view = capacity === 0 ? null : new Uint8Array(this.buffer);
+
+        /**
+         * Absolute read/write offset.
+         * @type {number}
+         * @expose
+         * @see ByteBuffer#flip
+         * @see ByteBuffer#clear
+         */
+        this.offset = 0;
+
+        /**
+         * Marked offset.
+         * @type {number}
+         * @expose
+         * @see ByteBuffer#mark
+         * @see ByteBuffer#reset
+         */
+        this.markedOffset = -1;
+
+        /**
+         * Absolute limit of the contained data. Set to the backing buffer's capacity upon allocation.
+         * @type {number}
+         * @expose
+         * @see ByteBuffer#flip
+         * @see ByteBuffer#clear
+         */
+        this.limit = capacity;
+
+        /**
+         * Whether to use little endian byte order, defaults to `false` for big endian.
+         * @type {boolean}
+         * @expose
+         */
+        this.littleEndian = littleEndian;
+
+        /**
+         * Whether to skip assertions of offsets and values, defaults to `false`.
+         * @type {boolean}
+         * @expose
+         */
+        this.noAssert = noAssert;
+    };
+
+    /**
+     * ByteBuffer version.
+     * @type {string}
+     * @const
+     * @expose
+     */
+    ByteBuffer.VERSION = "5.0.1";
+
+    /**
+     * Little endian constant that can be used instead of its boolean value. Evaluates to `true`.
+     * @type {boolean}
+     * @const
+     * @expose
+     */
+    ByteBuffer.LITTLE_ENDIAN = true;
+
+    /**
+     * Big endian constant that can be used instead of its boolean value. Evaluates to `false`.
+     * @type {boolean}
+     * @const
+     * @expose
+     */
+    ByteBuffer.BIG_ENDIAN = false;
+
+    /**
+     * Default initial capacity of `16`.
+     * @type {number}
+     * @expose
+     */
+    ByteBuffer.DEFAULT_CAPACITY = 16;
+
+    /**
+     * Default endianess of `false` for big endian.
+     * @type {boolean}
+     * @expose
+     */
+    ByteBuffer.DEFAULT_ENDIAN = ByteBuffer.BIG_ENDIAN;
+
+    /**
+     * Default no assertions flag of `false`.
+     * @type {boolean}
+     * @expose
+     */
+    ByteBuffer.DEFAULT_NOASSERT = false;
+
+    /**
+     * A `Long` class for representing a 64-bit two's-complement integer value. May be `null` if Long.js has not been loaded
+     *  and int64 support is not available.
+     * @type {?Long}
+     * @const
+     * @see https://github.com/dcodeIO/long.js
+     * @expose
+     */
+    ByteBuffer.Long = Long || null;
+
+    /**
+     * @alias ByteBuffer.prototype
+     * @inner
+     */
+    var ByteBufferPrototype = ByteBuffer.prototype;
+
+    /**
+     * An indicator used to reliably determine if an object is a ByteBuffer or not.
+     * @type {boolean}
+     * @const
+     * @expose
+     * @private
+     */
+    ByteBufferPrototype.__isByteBuffer__;
+
+    Object.defineProperty(ByteBufferPrototype, "__isByteBuffer__", {
+        value: true,
+        enumerable: false,
+        configurable: false
+    });
+
+    // helpers
+
+    /**
+     * @type {!ArrayBuffer}
+     * @inner
+     */
+    var EMPTY_BUFFER = new ArrayBuffer(0);
+
+    /**
+     * String.fromCharCode reference for compile-time renaming.
+     * @type {function(...number):string}
+     * @inner
+     */
+    var stringFromCharCode = String.fromCharCode;
+
+    /**
+     * Creates a source function for a string.
+     * @param {string} s String to read from
+     * @returns {function():number|null} Source function returning the next char code respectively `null` if there are
+     *  no more characters left.
+     * @throws {TypeError} If the argument is invalid
+     * @inner
+     */
+    function stringSource(s) {
+        var i=0; return function() {
+            return i < s.length ? s.charCodeAt(i++) : null;
+        };
+    }
+
+    /**
+     * Creates a destination function for a string.
+     * @returns {function(number=):undefined|string} Destination function successively called with the next char code.
+     *  Returns the final string when called without arguments.
+     * @inner
+     */
+    function stringDestination() {
+        var cs = [], ps = []; return function() {
+            if (arguments.length === 0)
+                return ps.join('')+stringFromCharCode.apply(String, cs);
+            if (cs.length + arguments.length > 1024)
+                ps.push(stringFromCharCode.apply(String, cs)),
+                    cs.length = 0;
+            Array.prototype.push.apply(cs, arguments);
+        };
+    }
+
+    /**
+     * Gets the accessor type.
+     * @returns {Function} `Buffer` under node.js, `Uint8Array` respectively `DataView` in the browser (classes)
+     * @expose
+     */
+    ByteBuffer.accessor = function() {
+        return Uint8Array;
+    };
+    /**
+     * Allocates a new ByteBuffer backed by a buffer of the specified capacity.
+     * @param {number=} capacity Initial capacity. Defaults to {@link ByteBuffer.DEFAULT_CAPACITY}.
+     * @param {boolean=} littleEndian Whether to use little or big endian byte order. Defaults to
+     *  {@link ByteBuffer.DEFAULT_ENDIAN}.
+     * @param {boolean=} noAssert Whether to skip assertions of offsets and values. Defaults to
+     *  {@link ByteBuffer.DEFAULT_NOASSERT}.
+     * @returns {!ByteBuffer}
+     * @expose
+     */
+    ByteBuffer.allocate = function(capacity, littleEndian, noAssert) {
+        return new ByteBuffer(capacity, littleEndian, noAssert);
+    };
+
+    /**
+     * Concatenates multiple ByteBuffers into one.
+     * @param {!Array.<!ByteBuffer|!ArrayBuffer|!Uint8Array|string>} buffers Buffers to concatenate
+     * @param {(string|boolean)=} encoding String encoding if `buffers` contains a string ("base64", "hex", "binary",
+     *  defaults to "utf8")
+     * @param {boolean=} littleEndian Whether to use little or big endian byte order for the resulting ByteBuffer. Defaults
+     *  to {@link ByteBuffer.DEFAULT_ENDIAN}.
+     * @param {boolean=} noAssert Whether to skip assertions of offsets and values for the resulting ByteBuffer. Defaults to
+     *  {@link ByteBuffer.DEFAULT_NOASSERT}.
+     * @returns {!ByteBuffer} Concatenated ByteBuffer
+     * @expose
+     */
+    ByteBuffer.concat = function(buffers, encoding, littleEndian, noAssert) {
+        if (typeof encoding === 'boolean' || typeof encoding !== 'string') {
+            noAssert = littleEndian;
+            littleEndian = encoding;
+            encoding = undefined;
+        }
+        var capacity = 0;
+        for (var i=0, k=buffers.length, length; i<k; ++i) {
+            if (!ByteBuffer.isByteBuffer(buffers[i]))
+                buffers[i] = ByteBuffer.wrap(buffers[i], encoding);
+            length = buffers[i].limit - buffers[i].offset;
+            if (length > 0) capacity += length;
+        }
+        if (capacity === 0)
+            return new ByteBuffer(0, littleEndian, noAssert);
+        var bb = new ByteBuffer(capacity, littleEndian, noAssert),
+            bi;
+        i=0; while (i<k) {
+            bi = buffers[i++];
+            length = bi.limit - bi.offset;
+            if (length <= 0) continue;
+            bb.view.set(bi.view.subarray(bi.offset, bi.limit), bb.offset);
+            bb.offset += length;
+        }
+        bb.limit = bb.offset;
+        bb.offset = 0;
+        return bb;
+    };
+
+    /**
+     * Tests if the specified type is a ByteBuffer.
+     * @param {*} bb ByteBuffer to test
+     * @returns {boolean} `true` if it is a ByteBuffer, otherwise `false`
+     * @expose
+     */
+    ByteBuffer.isByteBuffer = function(bb) {
+        return (bb && bb["__isByteBuffer__"]) === true;
+    };
+    /**
+     * Gets the backing buffer type.
+     * @returns {Function} `Buffer` under node.js, `ArrayBuffer` in the browser (classes)
+     * @expose
+     */
+    ByteBuffer.type = function() {
+        return ArrayBuffer;
+    };
+    /**
+     * Wraps a buffer or a string. Sets the allocated ByteBuffer's {@link ByteBuffer#offset} to `0` and its
+     *  {@link ByteBuffer#limit} to the length of the wrapped data.
+     * @param {!ByteBuffer|!ArrayBuffer|!Uint8Array|string|!Array.<number>} buffer Anything that can be wrapped
+     * @param {(string|boolean)=} encoding String encoding if `buffer` is a string ("base64", "hex", "binary", defaults to
+     *  "utf8")
+     * @param {boolean=} littleEndian Whether to use little or big endian byte order. Defaults to
+     *  {@link ByteBuffer.DEFAULT_ENDIAN}.
+     * @param {boolean=} noAssert Whether to skip assertions of offsets and values. Defaults to
+     *  {@link ByteBuffer.DEFAULT_NOASSERT}.
+     * @returns {!ByteBuffer} A ByteBuffer wrapping `buffer`
+     * @expose
+     */
+    ByteBuffer.wrap = function(buffer, encoding, littleEndian, noAssert) {
+        if (typeof encoding !== 'string') {
+            noAssert = littleEndian;
+            littleEndian = encoding;
+            encoding = undefined;
+        }
+        if (typeof buffer === 'string') {
+            if (typeof encoding === 'undefined')
+                encoding = "utf8";
+            switch (encoding) {
+                case "base64":
+                    return ByteBuffer.fromBase64(buffer, littleEndian);
+                case "hex":
+                    return ByteBuffer.fromHex(buffer, littleEndian);
+                case "binary":
+                    return ByteBuffer.fromBinary(buffer, littleEndian);
+                case "utf8":
+                    return ByteBuffer.fromUTF8(buffer, littleEndian);
+                case "debug":
+                    return ByteBuffer.fromDebug(buffer, littleEndian);
+                default:
+                    throw Error("Unsupported encoding: "+encoding);
+            }
+        }
+        if (buffer === null || typeof buffer !== 'object')
+            throw TypeError("Illegal buffer");
+        var bb;
+        if (ByteBuffer.isByteBuffer(buffer)) {
+            bb = ByteBufferPrototype.clone.call(buffer);
+            bb.markedOffset = -1;
+            return bb;
+        }
+        if (buffer instanceof Uint8Array) { // Extract ArrayBuffer from Uint8Array
+            bb = new ByteBuffer(0, littleEndian, noAssert);
+            if (buffer.length > 0) { // Avoid references to more than one EMPTY_BUFFER
+                bb.buffer = buffer.buffer;
+                bb.offset = buffer.byteOffset;
+                bb.limit = buffer.byteOffset + buffer.byteLength;
+                bb.view = new Uint8Array(buffer.buffer);
+            }
+        } else if (buffer instanceof ArrayBuffer) { // Reuse ArrayBuffer
+            bb = new ByteBuffer(0, littleEndian, noAssert);
+            if (buffer.byteLength > 0) {
+                bb.buffer = buffer;
+                bb.offset = 0;
+                bb.limit = buffer.byteLength;
+                bb.view = buffer.byteLength > 0 ? new Uint8Array(buffer) : null;
+            }
+        } else if (Object.prototype.toString.call(buffer) === "[object Array]") { // Create from octets
+            bb = new ByteBuffer(buffer.length, littleEndian, noAssert);
+            bb.limit = buffer.length;
+            for (var i=0; i<buffer.length; ++i)
+                bb.view[i] = buffer[i];
+        } else
+            throw TypeError("Illegal buffer"); // Otherwise fail
+        return bb;
+    };
+
+    /**
+     * Writes the array as a bitset.
+     * @param {Array<boolean>} value Array of booleans to write
+     * @param {number=} offset Offset to read from. Will use and increase {@link ByteBuffer#offset} by `length` if omitted.
+     * @returns {!ByteBuffer}
+     * @expose
+     */
+    ByteBufferPrototype.writeBitSet = function(value, offset) {
+    /**
+     * Decodes an UTF8 encoded string to a ByteBuffer.
+     * @param {string} str String to decode
+     * @param {boolean=} littleEndian Whether to use little or big endian byte order. Defaults to
+     *  {@link ByteBuffer.DEFAULT_ENDIAN}.
+     * @param {boolean=} noAssert Whether to skip assertions of offsets and values. Defaults to
+     *  {@link ByteBuffer.DEFAULT_NOASSERT}.
+     * @returns {!ByteBuffer} ByteBuffer
+     * @expose
+     */
+    ByteBuffer.fromUTF8 = function(str, littleEndian, noAssert) {
+        if (!noAssert)
+            if (typeof str !== 'string')
+                throw TypeError("Illegal str: Not a string");
+        var bb = new ByteBuffer(utfx.calculateUTF16asUTF8(stringSource(str), true)[1], littleEndian, noAssert),
+            i = 0;
+        utfx.encodeUTF16toUTF8(stringSource(str), function(b) {
+            bb.view[i++] = b;
+        });
+        bb.limit = i;
+        return bb;
+    };
+
+    return ByteBuffer;
+});
+
+},{"long":116}],67:[function(require,module,exports){
+},{"buffer":65,"inherits":112,"stream":176,"string_decoder":177}],68:[function(require,module,exports){
+},{"./md5":72,"buffer":65,"cipher-base":67,"inherits":112,"ripemd160":167,"sha.js":169}],71:[function(require,module,exports){
+},{"buffer":65,"create-hash/browser":70,"inherits":112,"stream":176}],74:[function(require,module,exports){
+},{"./generatePrime":83,"bn.js":34,"buffer":65,"miller-rabin":119,"randombytes":155}],83:[function(require,module,exports){
+},{"bn.js":34,"miller-rabin":119,"randombytes":155}],84:[function(require,module,exports){
+},{"_process":144,"crypto":74,"fs":62,"path":126}],116:[function(require,module,exports){
+/*
+ Copyright 2013 Daniel Wirtz <dcode@dcode.io>
+ Copyright 2009 The Closure Library Authors. All Rights Reserved.
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+ http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS-IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+ */
+
+/**
+ * @license long.js (c) 2013 Daniel Wirtz <dcode@dcode.io>
+ * Released under the Apache License, Version 2.0
+ * see: https://github.com/dcodeIO/long.js for details
+ */
+(function(global, factory) {
+
+    /* AMD */ if (typeof define === 'function' && define["amd"])
+        define([], factory);
+    /* CommonJS */ else if (typeof require === 'function' && typeof module === "object" && module && module["exports"])
+        module["exports"] = factory();
+    /* Global */ else
+        (global["dcodeIO"] = global["dcodeIO"] || {})["Long"] = factory();
+
+})(this, function() {
+    "use strict";
+
+    /**
+     * Constructs a 64 bit two's-complement integer, given its low and high 32 bit values as *signed* integers.
+     *  See the from* functions below for more convenient ways of constructing Longs.
+     * @exports Long
+     * @class A Long class for representing a 64 bit two's-complement integer value.
+     * @param {number} low The low (signed) 32 bits of the long
+     * @param {number} high The high (signed) 32 bits of the long
+     * @param {boolean=} unsigned Whether unsigned or not, defaults to `false` for signed
+     * @constructor
+     */
+    function Long(low, high, unsigned) {
+
+        /**
+         * The low 32 bits as a signed value.
+         * @type {number}
+         */
+        this.low = low | 0;
+
+        /**
+         * The high 32 bits as a signed value.
+         * @type {number}
+         */
+        this.high = high | 0;
+
+        /**
+         * Whether unsigned or not.
+         * @type {boolean}
+         */
+        this.unsigned = !!unsigned;
+    }
+
+    // The internal representation of a long is the two given signed, 32-bit values.
+    // We use 32-bit pieces because these are the size of integers on which
+    // Javascript performs bit-operations.  For operations like addition and
+    // multiplication, we split each number into 16 bit pieces, which can easily be
+    // multiplied within Javascript's floating-point representation without overflow
+    // or change in sign.
+    //
+    // In the algorithms below, we frequently reduce the negative case to the
+    // positive case by negating the input(s) and then post-processing the result.
+    // Note that we must ALWAYS check specially whether those values are MIN_VALUE
+    // (-2^63) because -MIN_VALUE == MIN_VALUE (since 2^63 cannot be represented as
+    // a positive number, it overflows back into a negative).  Not handling this
+    // case would often result in infinite recursion.
+    //
+    // Common constant values ZERO, ONE, NEG_ONE, etc. are defined below the from*
+    // methods on which they depend.
+
+    /**
+     * An indicator used to reliably determine if an object is a Long or not.
+     * @type {boolean}
+     * @const
+     * @private
+     */
+    Long.prototype.__isLong__;
+
+    Object.defineProperty(Long.prototype, "__isLong__", {
+        value: true,
+        enumerable: false,
+        configurable: false
+    });
+
+    /**
+     * @function
+     * @param {*} obj Object
+     * @returns {boolean}
+     * @inner
+     */
+    function isLong(obj) {
+        return (obj && obj["__isLong__"]) === true;
+    }
+
+    /**
+     * Tests if the specified object is a Long.
+     * @function
+     * @param {*} obj Object
+     * @returns {boolean}
+     */
+    Long.isLong = isLong;
+
+    /**
+     * A cache of the Long representations of small integer values.
+     * @type {!Object}
+     * @inner
+     */
+    var INT_CACHE = {};
+
+    /**
+     * A cache of the Long representations of small unsigned integer values.
+     * @type {!Object}
+     * @inner
+     */
+    var UINT_CACHE = {};
+
+    /**
+     * @param {number} value
+     * @param {boolean=} unsigned
+     * @returns {!Long}
+     * @inner
+     */
+    function fromInt(value, unsigned) {
+        var obj, cachedObj, cache;
+        if (unsigned) {
+            value >>>= 0;
+            if (cache = (0 <= value && value < 256)) {
+                cachedObj = UINT_CACHE[value];
+                if (cachedObj)
+                    return cachedObj;
+            }
+            obj = fromBits(value, (value | 0) < 0 ? -1 : 0, true);
+            if (cache)
+                UINT_CACHE[value] = obj;
+            return obj;
+        } else {
+            value |= 0;
+            if (cache = (-128 <= value && value < 128)) {
+                cachedObj = INT_CACHE[value];
+                if (cachedObj)
+                    return cachedObj;
+            }
+            obj = fromBits(value, value < 0 ? -1 : 0, false);
+            if (cache)
+                INT_CACHE[value] = obj;
+            return obj;
+        }
+    }
+
+    /**
+     * Returns a Long representing the given 32 bit integer value.
+     * @function
+     * @param {number} value The 32 bit integer in question
+     * @param {boolean=} unsigned Whether unsigned or not, defaults to `false` for signed
+     * @returns {!Long} The corresponding Long value
+     */
+    Long.fromInt = fromInt;
+
+    /**
+     * @param {number} value
+     * @param {boolean=} unsigned
+     * @returns {!Long}
+     * @inner
+     */
+    function fromNumber(value, unsigned) {
+        if (isNaN(value) || !isFinite(value))
+            return unsigned ? UZERO : ZERO;
+        if (unsigned) {
+            if (value < 0)
+                return UZERO;
+            if (value >= TWO_PWR_64_DBL)
+                return MAX_UNSIGNED_VALUE;
+        } else {
+            if (value <= -TWO_PWR_63_DBL)
+                return MIN_VALUE;
+            if (value + 1 >= TWO_PWR_63_DBL)
+                return MAX_VALUE;
+        }
+        if (value < 0)
+            return fromNumber(-value, unsigned).neg();
+        return fromBits((value % TWO_PWR_32_DBL) | 0, (value / TWO_PWR_32_DBL) | 0, unsigned);
+    }
+
+    /**
+     * Returns a Long representing the given value, provided that it is a finite number. Otherwise, zero is returned.
+     * @function
+     * @param {number} value The number in question
+     * @param {boolean=} unsigned Whether unsigned or not, defaults to `false` for signed
+     * @returns {!Long} The corresponding Long value
+     */
+    Long.fromNumber = fromNumber;
+
+    /**
+     * @param {number} lowBits
+     * @param {number} highBits
+     * @param {boolean=} unsigned
+     * @returns {!Long}
+     * @inner
+     */
+    function fromBits(lowBits, highBits, unsigned) {
+        return new Long(lowBits, highBits, unsigned);
+    }
+
+    /**
+     * Returns a Long representing the 64 bit integer that comes by concatenating the given low and high bits. Each is
+     *  assumed to use 32 bits.
+     * @function
+     * @param {number} lowBits The low 32 bits
+     * @param {number} highBits The high 32 bits
+     * @param {boolean=} unsigned Whether unsigned or not, defaults to `false` for signed
+     * @returns {!Long} The corresponding Long value
+     */
+    Long.fromBits = fromBits;
+
+    /**
+     * @function
+     * @param {number} base
+     * @param {number} exponent
+     * @returns {number}
+     * @inner
+     */
+    var pow_dbl = Math.pow; // Used 4 times (4*8 to 15+4)
+
+    /**
+     * @param {string} str
+     * @param {(boolean|number)=} unsigned
+     * @param {number=} radix
+     * @returns {!Long}
+     * @inner
+     */
+    function fromString(str, unsigned, radix) {
+        if (str.length === 0)
+            throw Error('empty string');
+        if (str === "NaN" || str === "Infinity" || str === "+Infinity" || str === "-Infinity")
+            return ZERO;
+        if (typeof unsigned === 'number') {
+            // For goog.math.long compatibility
+            radix = unsigned,
+            unsigned = false;
+        } else {
+            unsigned = !! unsigned;
+        }
+        radix = radix || 10;
+        if (radix < 2 || 36 < radix)
+            throw RangeError('radix');
+
+        var p;
+        if ((p = str.indexOf('-')) > 0)
+            throw Error('interior hyphen');
+        else if (p === 0) {
+            return fromString(str.substring(1), unsigned, radix).neg();
+        }
+
+        // Do several (8) digits each time through the loop, so as to
+        // minimize the calls to the very expensive emulated div.
+        var radixToPower = fromNumber(pow_dbl(radix, 8));
+
+        var result = ZERO;
+        for (var i = 0; i < str.length; i += 8) {
+            var size = Math.min(8, str.length - i),
+                value = parseInt(str.substring(i, i + size), radix);
+            if (size < 8) {
+                var power = fromNumber(pow_dbl(radix, size));
+                result = result.mul(power).add(fromNumber(value));
+            } else {
+                result = result.mul(radixToPower);
+                result = result.add(fromNumber(value));
+            }
+        }
+        result.unsigned = unsigned;
+        return result;
+    }
+
+    /**
+     * Returns a Long representation of the given string, written using the specified radix.
+     * @function
+     * @param {string} str The textual representation of the Long
+     * @param {(boolean|number)=} unsigned Whether unsigned or not, defaults to `false` for signed
+     * @param {number=} radix The radix in which the text is written (2-36), defaults to 10
+     * @returns {!Long} The corresponding Long value
+     */
+    Long.fromString = fromString;
+
+    /**
+     * @function
+     * @param {!Long|number|string|!{low: number, high: number, unsigned: boolean}} val
+     * @returns {!Long}
+     * @inner
+     */
+    function fromValue(val) {
+        if (val /* is compatible */ instanceof Long)
+            return val;
+        if (typeof val === 'number')
+            return fromNumber(val);
+        if (typeof val === 'string')
+            return fromString(val);
+        // Throws for non-objects, converts non-instanceof Long:
+        return fromBits(val.low, val.high, val.unsigned);
+    }
+
+    /**
+     * Converts the specified value to a Long.
+     * @function
+     * @param {!Long|number|string|!{low: number, high: number, unsigned: boolean}} val Value
+     * @returns {!Long}
+     */
+    Long.fromValue = fromValue;
+
+    // NOTE: the compiler should inline these constant values below and then remove these variables, so there should be
+    // no runtime penalty for these.
+
+    /**
+     * @type {number}
+     * @const
+     * @inner
+     */
+    var TWO_PWR_16_DBL = 1 << 16;
+
+    /**
+     * @type {number}
+     * @const
+     * @inner
+     */
+    var TWO_PWR_24_DBL = 1 << 24;
+
+    /**
+     * @type {number}
+     * @const
+     * @inner
+     */
+    var TWO_PWR_32_DBL = TWO_PWR_16_DBL * TWO_PWR_16_DBL;
+
+    /**
+     * @type {number}
+     * @const
+     * @inner
+     */
+    var TWO_PWR_64_DBL = TWO_PWR_32_DBL * TWO_PWR_32_DBL;
+
+    /**
+     * @type {number}
+     * @const
+     * @inner
+     */
+    var TWO_PWR_63_DBL = TWO_PWR_64_DBL / 2;
+
+    /**
+     * @type {!Long}
+     * @const
+     * @inner
+     */
+    var TWO_PWR_24 = fromInt(TWO_PWR_24_DBL);
+
+    /**
+     * @type {!Long}
+     * @inner
+     */
+    var ZERO = fromInt(0);
+
+    /**
+     * Signed zero.
+     * @type {!Long}
+     */
+    Long.ZERO = ZERO;
+
+    /**
+     * @type {!Long}
+     * @inner
+     */
+    var UZERO = fromInt(0, true);
+
+    /**
+     * Unsigned zero.
+     * @type {!Long}
+     */
+    Long.UZERO = UZERO;
+
+    /**
+     * @type {!Long}
+     * @inner
+     */
+    var ONE = fromInt(1);
+
+    /**
+     * Signed one.
+     * @type {!Long}
+     */
+    Long.ONE = ONE;
+
+    /**
+     * @type {!Long}
+     * @inner
+     */
+    var UONE = fromInt(1, true);
+
+    /**
+     * Unsigned one.
+     * @type {!Long}
+     */
+    Long.UONE = UONE;
+
+    /**
+     * @type {!Long}
+     * @inner
+     */
+    var NEG_ONE = fromInt(-1);
+
+    /**
+     * Signed negative one.
+     * @type {!Long}
+     */
+    Long.NEG_ONE = NEG_ONE;
+
+    /**
+     * @type {!Long}
+     * @inner
+     */
+    var MAX_VALUE = fromBits(0xFFFFFFFF|0, 0x7FFFFFFF|0, false);
+
+    /**
+     * Maximum signed value.
+     * @type {!Long}
+     */
+    Long.MAX_VALUE = MAX_VALUE;
+
+    /**
+     * @type {!Long}
+     * @inner
+     */
+    var MAX_UNSIGNED_VALUE = fromBits(0xFFFFFFFF|0, 0xFFFFFFFF|0, true);
+
+    /**
+     * Maximum unsigned value.
+     * @type {!Long}
+     */
+    Long.MAX_UNSIGNED_VALUE = MAX_UNSIGNED_VALUE;
+
+    /**
+     * @type {!Long}
+     * @inner
+     */
+    var MIN_VALUE = fromBits(0, 0x80000000|0, false);
+
+    /**
+     * Minimum signed value.
+     * @type {!Long}
+     */
+    Long.MIN_VALUE = MIN_VALUE;
+
+    /**
+     * @alias Long.prototype
+     * @inner
+     */
+    var LongPrototype = Long.prototype;
+
+    /**
+     * Converts the Long to a 32 bit integer, assuming it is a 32 bit integer.
+     * @returns {number}
+     */
+    LongPrototype.toInt = function toInt() {
+        return this.unsigned ? this.low >>> 0 : this.low;
+    };
+
+    /**
+     * Converts the Long to a the nearest floating-point representation of this value (double, 53 bit mantissa).
+     * @returns {number}
+     */
+    LongPrototype.toNumber = function toNumber() {
+        if (this.unsigned)
+            return ((this.high >>> 0) * TWO_PWR_32_DBL) + (this.low >>> 0);
+        return this.high * TWO_PWR_32_DBL + (this.low >>> 0);
+    };
+
+    /**
+     * Converts the Long to a string written in the specified radix.
+     * @param {number=} radix Radix (2-36), defaults to 10
+     * @returns {string}
+     * @override
+     * @throws {RangeError} If `radix` is out of range
+     */
+    LongPrototype.toString = function toString(radix) {
+        radix = radix || 10;
+        if (radix < 2 || 36 < radix)
+            throw RangeError('radix');
+        if (this.isZero())
+            return '0';
+        if (this.isNegative()) { // Unsigned Longs are never negative
+            if (this.eq(MIN_VALUE)) {
+                // We need to change the Long value before it can be negated, so we remove
+                // the bottom-most digit in this base and then recurse to do the rest.
+                var radixLong = fromNumber(radix),
+                    div = this.div(radixLong),
+                    rem1 = div.mul(radixLong).sub(this);
+                return div.toString(radix) + rem1.toInt().toString(radix);
+            } else
+                return '-' + this.neg().toString(radix);
+        }
+
+        // Do several (6) digits each time through the loop, so as to
+        // minimize the calls to the very expensive emulated div.
+        var radixToPower = fromNumber(pow_dbl(radix, 6), this.unsigned),
+            rem = this;
+        var result = '';
+        while (true) {
+            var remDiv = rem.div(radixToPower),
+                intval = rem.sub(remDiv.mul(radixToPower)).toInt() >>> 0,
+                digits = intval.toString(radix);
+            rem = remDiv;
+            if (rem.isZero())
+                return digits + result;
+            else {
+                while (digits.length < 6)
+                    digits = '0' + digits;
+                result = '' + digits + result;
+            }
+        }
+    };
+
+    /**
+     * Gets the high 32 bits as a signed integer.
+     * @returns {number} Signed high bits
+     */
+    LongPrototype.getHighBits = function getHighBits() {
+        return this.high;
+    };
+
+    /**
+     * Gets the high 32 bits as an unsigned integer.
+     * @returns {number} Unsigned high bits
+     */
+    LongPrototype.getHighBitsUnsigned = function getHighBitsUnsigned() {
+        return this.high >>> 0;
+    };
+
+    /**
+     * Gets the low 32 bits as a signed integer.
+     * @returns {number} Signed low bits
+     */
+    LongPrototype.getLowBits = function getLowBits() {
+        return this.low;
+    };
+
+    /**
+     * Gets the low 32 bits as an unsigned integer.
+     * @returns {number} Unsigned low bits
+     */
+    LongPrototype.getLowBitsUnsigned = function getLowBitsUnsigned() {
+        return this.low >>> 0;
+    };
+
+    /**
+     * Gets the number of bits needed to represent the absolute value of this Long.
+     * @returns {number}
+     */
+    LongPrototype.getNumBitsAbs = function getNumBitsAbs() {
+        if (this.isNegative()) // Unsigned Longs are never negative
+            return this.eq(MIN_VALUE) ? 64 : this.neg().getNumBitsAbs();
+        var val = this.high != 0 ? this.high : this.low;
+        for (var bit = 31; bit > 0; bit--)
+            if ((val & (1 << bit)) != 0)
+                break;
+        return this.high != 0 ? bit + 33 : bit + 1;
+    };
+
+    /**
+     * Tests if this Long's value equals zero.
+     * @returns {boolean}
+     */
+    LongPrototype.isZero = function isZero() {
+        return this.high === 0 && this.low === 0;
+    };
+
+    /**
+     * Tests if this Long's value is negative.
+     * @returns {boolean}
+     */
+    LongPrototype.isNegative = function isNegative() {
+        return !this.unsigned && this.high < 0;
+    };
+
+    /**
+     * Tests if this Long's value is positive.
+     * @returns {boolean}
+     */
+    LongPrototype.isPositive = function isPositive() {
+        return this.unsigned || this.high >= 0;
+    };
+
+    /**
+     * Tests if this Long's value is odd.
+     * @returns {boolean}
+     */
+    LongPrototype.isOdd = function isOdd() {
+        return (this.low & 1) === 1;
+    };
+
+    /**
+     * Tests if this Long's value is even.
+     * @returns {boolean}
+     */
+    LongPrototype.isEven = function isEven() {
+        return (this.low & 1) === 0;
+    };
+
+    /**
+     * Tests if this Long's value equals the specified's.
+     * @param {!Long|number|string} other Other value
+     * @returns {boolean}
+     */
+    LongPrototype.equals = function equals(other) {
+        if (!isLong(other))
+            other = fromValue(other);
+        if (this.unsigned !== other.unsigned && (this.high >>> 31) === 1 && (other.high >>> 31) === 1)
+            return false;
+        return this.high === other.high && this.low === other.low;
+    };
+
+    /**
+     * Tests if this Long's value equals the specified's. This is an alias of {@link Long#equals}.
+     * @function
+     * @param {!Long|number|string} other Other value
+     * @returns {boolean}
+     */
+    LongPrototype.eq = LongPrototype.equals;
+
+    /**
+     * Tests if this Long's value differs from the specified's.
+     * @param {!Long|number|string} other Other value
+     * @returns {boolean}
+     */
+    LongPrototype.notEquals = function notEquals(other) {
+        return !this.eq(/* validates */ other);
+    };
+
+    /**
+     * Tests if this Long's value differs from the specified's. This is an alias of {@link Long#notEquals}.
+     * @function
+     * @param {!Long|number|string} other Other value
+     * @returns {boolean}
+     */
+    LongPrototype.neq = LongPrototype.notEquals;
+
+    /**
+     * Tests if this Long's value is less than the specified's.
+     * @param {!Long|number|string} other Other value
+     * @returns {boolean}
+     */
+    LongPrototype.lessThan = function lessThan(other) {
+        return this.comp(/* validates */ other) < 0;
+    };
+
+    /**
+     * Tests if this Long's value is less than the specified's. This is an alias of {@link Long#lessThan}.
+     * @function
+     * @param {!Long|number|string} other Other value
+     * @returns {boolean}
+     */
+    LongPrototype.lt = LongPrototype.lessThan;
+
+    /**
+     * Tests if this Long's value is less than or equal the specified's.
+     * @param {!Long|number|string} other Other value
+     * @returns {boolean}
+     */
+    LongPrototype.lessThanOrEqual = function lessThanOrEqual(other) {
+        return this.comp(/* validates */ other) <= 0;
+    };
+
+    /**
+     * Tests if this Long's value is less than or equal the specified's. This is an alias of {@link Long#lessThanOrEqual}.
+     * @function
+     * @param {!Long|number|string} other Other value
+     * @returns {boolean}
+     */
+    LongPrototype.lte = LongPrototype.lessThanOrEqual;
+
+    /**
+     * Tests if this Long's value is greater than the specified's.
+     * @param {!Long|number|string} other Other value
+     * @returns {boolean}
+     */
+    LongPrototype.greaterThan = function greaterThan(other) {
+        return this.comp(/* validates */ other) > 0;
+    };
+
+    /**
+     * Tests if this Long's value is greater than the specified's. This is an alias of {@link Long#greaterThan}.
+     * @function
+     * @param {!Long|number|string} other Other value
+     * @returns {boolean}
+     */
+    LongPrototype.gt = LongPrototype.greaterThan;
+
+    /**
+     * Tests if this Long's value is greater than or equal the specified's.
+     * @param {!Long|number|string} other Other value
+     * @returns {boolean}
+     */
+    LongPrototype.greaterThanOrEqual = function greaterThanOrEqual(other) {
+        return this.comp(/* validates */ other) >= 0;
+    };
+
+    /**
+     * Tests if this Long's value is greater than or equal the specified's. This is an alias of {@link Long#greaterThanOrEqual}.
+     * @function
+     * @param {!Long|number|string} other Other value
+     * @returns {boolean}
+     */
+    LongPrototype.gte = LongPrototype.greaterThanOrEqual;
+
+    /**
+     * Compares this Long's value with the specified's.
+     * @param {!Long|number|string} other Other value
+     * @returns {number} 0 if they are the same, 1 if the this is greater and -1
+     *  if the given one is greater
+     */
+    LongPrototype.compare = function compare(other) {
+        if (!isLong(other))
+            other = fromValue(other);
+        if (this.eq(other))
+            return 0;
+        var thisNeg = this.isNegative(),
+            otherNeg = other.isNegative();
+        if (thisNeg && !otherNeg)
+            return -1;
+        if (!thisNeg && otherNeg)
+            return 1;
+        // At this point the sign bits are the same
+        if (!this.unsigned)
+            return this.sub(other).isNegative() ? -1 : 1;
+        // Both are positive if at least one is unsigned
+        return (other.high >>> 0) > (this.high >>> 0) || (other.high === this.high && (other.low >>> 0) > (this.low >>> 0)) ? -1 : 1;
+    };
+
+    /**
+     * Compares this Long's value with the specified's. This is an alias of {@link Long#compare}.
+     * @function
+     * @param {!Long|number|string} other Other value
+     * @returns {number} 0 if they are the same, 1 if the this is greater and -1
+     *  if the given one is greater
+     */
+    LongPrototype.comp = LongPrototype.compare;
+
+    /**
+     * Negates this Long's value.
+     * @returns {!Long} Negated Long
+     */
+    LongPrototype.negate = function negate() {
+        if (!this.unsigned && this.eq(MIN_VALUE))
+            return MIN_VALUE;
+        return this.not().add(ONE);
+    };
+
+    /**
+     * Negates this Long's value. This is an alias of {@link Long#negate}.
+     * @function
+     * @returns {!Long} Negated Long
+     */
+    LongPrototype.neg = LongPrototype.negate;
+
+    /**
+     * Returns the sum of this and the specified Long.
+     * @param {!Long|number|string} addend Addend
+     * @returns {!Long} Sum
+     */
+    LongPrototype.add = function add(addend) {
+        if (!isLong(addend))
+            addend = fromValue(addend);
+
+        // Divide each number into 4 chunks of 16 bits, and then sum the chunks.
+
+        var a48 = this.high >>> 16;
+        var a32 = this.high & 0xFFFF;
+        var a16 = this.low >>> 16;
+        var a00 = this.low & 0xFFFF;
+
+        var b48 = addend.high >>> 16;
+        var b32 = addend.high & 0xFFFF;
+        var b16 = addend.low >>> 16;
+        var b00 = addend.low & 0xFFFF;
+
+        var c48 = 0, c32 = 0, c16 = 0, c00 = 0;
+        c00 += a00 + b00;
+        c16 += c00 >>> 16;
+        c00 &= 0xFFFF;
+        c16 += a16 + b16;
+        c32 += c16 >>> 16;
+        c16 &= 0xFFFF;
+        c32 += a32 + b32;
+        c48 += c32 >>> 16;
+        c32 &= 0xFFFF;
+        c48 += a48 + b48;
+        c48 &= 0xFFFF;
+        return fromBits((c16 << 16) | c00, (c48 << 16) | c32, this.unsigned);
+    };
+
+    /**
+     * Returns the difference of this and the specified Long.
+     * @param {!Long|number|string} subtrahend Subtrahend
+     * @returns {!Long} Difference
+     */
+    LongPrototype.subtract = function subtract(subtrahend) {
+        if (!isLong(subtrahend))
+            subtrahend = fromValue(subtrahend);
+        return this.add(subtrahend.neg());
+    };
+
+    /**
+     * Returns the difference of this and the specified Long. This is an alias of {@link Long#subtract}.
+     * @function
+     * @param {!Long|number|string} subtrahend Subtrahend
+     * @returns {!Long} Difference
+     */
+    LongPrototype.sub = LongPrototype.subtract;
+
+    /**
+     * Returns the product of this and the specified Long.
+     * @param {!Long|number|string} multiplier Multiplier
+     * @returns {!Long} Product
+     */
+    LongPrototype.multiply = function multiply(multiplier) {
+        if (this.isZero())
+            return ZERO;
+        if (!isLong(multiplier))
+            multiplier = fromValue(multiplier);
+        if (multiplier.isZero())
+            return ZERO;
+        if (this.eq(MIN_VALUE))
+            return multiplier.isOdd() ? MIN_VALUE : ZERO;
+        if (multiplier.eq(MIN_VALUE))
+            return this.isOdd() ? MIN_VALUE : ZERO;
+
+        if (this.isNegative()) {
+            if (multiplier.isNegative())
+                return this.neg().mul(multiplier.neg());
+            else
+                return this.neg().mul(multiplier).neg();
+        } else if (multiplier.isNegative())
+            return this.mul(multiplier.neg()).neg();
+
+        // If both longs are small, use float multiplication
+        if (this.lt(TWO_PWR_24) && multiplier.lt(TWO_PWR_24))
+            return fromNumber(this.toNumber() * multiplier.toNumber(), this.unsigned);
+
+        // Divide each long into 4 chunks of 16 bits, and then add up 4x4 products.
+        // We can skip products that would overflow.
+
+        var a48 = this.high >>> 16;
+        var a32 = this.high & 0xFFFF;
+        var a16 = this.low >>> 16;
+        var a00 = this.low & 0xFFFF;
+
+        var b48 = multiplier.high >>> 16;
+        var b32 = multiplier.high & 0xFFFF;
+        var b16 = multiplier.low >>> 16;
+        var b00 = multiplier.low & 0xFFFF;
+
+        var c48 = 0, c32 = 0, c16 = 0, c00 = 0;
+        c00 += a00 * b00;
+        c16 += c00 >>> 16;
+        c00 &= 0xFFFF;
+        c16 += a16 * b00;
+        c32 += c16 >>> 16;
+        c16 &= 0xFFFF;
+        c16 += a00 * b16;
+        c32 += c16 >>> 16;
+        c16 &= 0xFFFF;
+        c32 += a32 * b00;
+        c48 += c32 >>> 16;
+        c32 &= 0xFFFF;
+        c32 += a16 * b16;
+        c48 += c32 >>> 16;
+        c32 &= 0xFFFF;
+        c32 += a00 * b32;
+        c48 += c32 >>> 16;
+        c32 &= 0xFFFF;
+        c48 += a48 * b00 + a32 * b16 + a16 * b32 + a00 * b48;
+        c48 &= 0xFFFF;
+        return fromBits((c16 << 16) | c00, (c48 << 16) | c32, this.unsigned);
+    };
+
+    /**
+     * Returns the product of this and the specified Long. This is an alias of {@link Long#multiply}.
+     * @function
+     * @param {!Long|number|string} multiplier Multiplier
+     * @returns {!Long} Product
+     */
+    LongPrototype.mul = LongPrototype.multiply;
+
+    /**
+     * Returns this Long divided by the specified. The result is signed if this Long is signed or
+     *  unsigned if this Long is unsigned.
+     * @param {!Long|number|string} divisor Divisor
+     * @returns {!Long} Quotient
+     */
+    LongPrototype.divide = function divide(divisor) {
+        if (!isLong(divisor))
+            divisor = fromValue(divisor);
+        if (divisor.isZero())
+            throw Error('division by zero');
+        if (this.isZero())
+            return this.unsigned ? UZERO : ZERO;
+        var approx, rem, res;
+        if (!this.unsigned) {
+            // This section is only relevant for signed longs and is derived from the
+            // closure library as a whole.
+            if (this.eq(MIN_VALUE)) {
+                if (divisor.eq(ONE) || divisor.eq(NEG_ONE))
+                    return MIN_VALUE;  // recall that -MIN_VALUE == MIN_VALUE
+                else if (divisor.eq(MIN_VALUE))
+                    return ONE;
+                else {
+                    // At this point, we have |other| >= 2, so |this/other| < |MIN_VALUE|.
+                    var halfThis = this.shr(1);
+                    approx = halfThis.div(divisor).shl(1);
+                    if (approx.eq(ZERO)) {
+                        return divisor.isNegative() ? ONE : NEG_ONE;
+                    } else {
+                        rem = this.sub(divisor.mul(approx));
+                        res = approx.add(rem.div(divisor));
+                        return res;
+                    }
+                }
+            } else if (divisor.eq(MIN_VALUE))
+                return this.unsigned ? UZERO : ZERO;
+            if (this.isNegative()) {
+                if (divisor.isNegative())
+                    return this.neg().div(divisor.neg());
+                return this.neg().div(divisor).neg();
+            } else if (divisor.isNegative())
+                return this.div(divisor.neg()).neg();
+            res = ZERO;
+        } else {
+            // The algorithm below has not been made for unsigned longs. It's therefore
+            // required to take special care of the MSB prior to running it.
+            if (!divisor.unsigned)
+                divisor = divisor.toUnsigned();
+            if (divisor.gt(this))
+                return UZERO;
+            if (divisor.gt(this.shru(1))) // 15 >>> 1 = 7 ; with divisor = 8 ; true
+                return UONE;
+            res = UZERO;
+        }
+
+        // Repeat the following until the remainder is less than other:  find a
+        // floating-point that approximates remainder / other *from below*, add this
+        // into the result, and subtract it from the remainder.  It is critical that
+        // the approximate value is less than or equal to the real value so that the
+        // remainder never becomes negative.
+        rem = this;
+        while (rem.gte(divisor)) {
+            // Approximate the result of division. This may be a little greater or
+            // smaller than the actual value.
+            approx = Math.max(1, Math.floor(rem.toNumber() / divisor.toNumber()));
+
+            // We will tweak the approximate result by changing it in the 48-th digit or
+            // the smallest non-fractional digit, whichever is larger.
+            var log2 = Math.ceil(Math.log(approx) / Math.LN2),
+                delta = (log2 <= 48) ? 1 : pow_dbl(2, log2 - 48),
+
+            // Decrease the approximation until it is smaller than the remainder.  Note
+            // that if it is too large, the product overflows and is negative.
+                approxRes = fromNumber(approx),
+                approxRem = approxRes.mul(divisor);
+            while (approxRem.isNegative() || approxRem.gt(rem)) {
+                approx -= delta;
+                approxRes = fromNumber(approx, this.unsigned);
+                approxRem = approxRes.mul(divisor);
+            }
+
+            // We know the answer can't be zero... and actually, zero would cause
+            // infinite recursion since we would make no progress.
+            if (approxRes.isZero())
+                approxRes = ONE;
+
+            res = res.add(approxRes);
+            rem = rem.sub(approxRem);
+        }
+        return res;
+    };
+
+    /**
+     * Returns this Long divided by the specified. This is an alias of {@link Long#divide}.
+     * @function
+     * @param {!Long|number|string} divisor Divisor
+     * @returns {!Long} Quotient
+     */
+    LongPrototype.div = LongPrototype.divide;
+
+    /**
+     * Returns this Long modulo the specified.
+     * @param {!Long|number|string} divisor Divisor
+     * @returns {!Long} Remainder
+     */
+    LongPrototype.modulo = function modulo(divisor) {
+        if (!isLong(divisor))
+            divisor = fromValue(divisor);
+        return this.sub(this.div(divisor).mul(divisor));
+    };
+
+    /**
+     * Returns this Long modulo the specified. This is an alias of {@link Long#modulo}.
+     * @function
+     * @param {!Long|number|string} divisor Divisor
+     * @returns {!Long} Remainder
+     */
+    LongPrototype.mod = LongPrototype.modulo;
+
+    /**
+     * Returns the bitwise NOT of this Long.
+     * @returns {!Long}
+     */
+    LongPrototype.not = function not() {
+        return fromBits(~this.low, ~this.high, this.unsigned);
+    };
+
+    /**
+     * Returns the bitwise AND of this Long and the specified.
+     * @param {!Long|number|string} other Other Long
+     * @returns {!Long}
+     */
+    LongPrototype.and = function and(other) {
+        if (!isLong(other))
+            other = fromValue(other);
+        return fromBits(this.low & other.low, this.high & other.high, this.unsigned);
+    };
+
+    /**
+     * Returns the bitwise OR of this Long and the specified.
+     * @param {!Long|number|string} other Other Long
+     * @returns {!Long}
+     */
+    LongPrototype.or = function or(other) {
+        if (!isLong(other))
+            other = fromValue(other);
+        return fromBits(this.low | other.low, this.high | other.high, this.unsigned);
+    };
+
+    /**
+     * Returns the bitwise XOR of this Long and the given one.
+     * @param {!Long|number|string} other Other Long
+     * @returns {!Long}
+     */
+    LongPrototype.xor = function xor(other) {
+        if (!isLong(other))
+            other = fromValue(other);
+        return fromBits(this.low ^ other.low, this.high ^ other.high, this.unsigned);
+    };
+
+    /**
+     * Returns this Long with bits shifted to the left by the given amount.
+     * @param {number|!Long} numBits Number of bits
+     * @returns {!Long} Shifted Long
+     */
+    LongPrototype.shiftLeft = function shiftLeft(numBits) {
+        if (isLong(numBits))
+            numBits = numBits.toInt();
+        if ((numBits &= 63) === 0)
+            return this;
+        else if (numBits < 32)
+            return fromBits(this.low << numBits, (this.high << numBits) | (this.low >>> (32 - numBits)), this.unsigned);
+        else
+            return fromBits(0, this.low << (numBits - 32), this.unsigned);
+    };
+
+    /**
+     * Returns this Long with bits shifted to the left by the given amount. This is an alias of {@link Long#shiftLeft}.
+     * @function
+     * @param {number|!Long} numBits Number of bits
+     * @returns {!Long} Shifted Long
+     */
+    LongPrototype.shl = LongPrototype.shiftLeft;
+
+    /**
+     * Returns this Long with bits arithmetically shifted to the right by the given amount.
+     * @param {number|!Long} numBits Number of bits
+     * @returns {!Long} Shifted Long
+     */
+    LongPrototype.shiftRight = function shiftRight(numBits) {
+        if (isLong(numBits))
+            numBits = numBits.toInt();
+        if ((numBits &= 63) === 0)
+            return this;
+        else if (numBits < 32)
+            return fromBits((this.low >>> numBits) | (this.high << (32 - numBits)), this.high >> numBits, this.unsigned);
+        else
+            return fromBits(this.high >> (numBits - 32), this.high >= 0 ? 0 : -1, this.unsigned);
+    };
+
+    /**
+     * Returns this Long with bits arithmetically shifted to the right by the given amount. This is an alias of {@link Long#shiftRight}.
+     * @function
+     * @param {number|!Long} numBits Number of bits
+     * @returns {!Long} Shifted Long
+     */
+    LongPrototype.shr = LongPrototype.shiftRight;
+
+    /**
+     * Returns this Long with bits logically shifted to the right by the given amount.
+     * @param {number|!Long} numBits Number of bits
+     * @returns {!Long} Shifted Long
+     */
+    LongPrototype.shiftRightUnsigned = function shiftRightUnsigned(numBits) {
+        if (isLong(numBits))
+            numBits = numBits.toInt();
+        numBits &= 63;
+        if (numBits === 0)
+            return this;
+        else {
+            var high = this.high;
+            if (numBits < 32) {
+                var low = this.low;
+                return fromBits((low >>> numBits) | (high << (32 - numBits)), high >>> numBits, this.unsigned);
+            } else if (numBits === 32)
+                return fromBits(high, 0, this.unsigned);
+            else
+                return fromBits(high >>> (numBits - 32), 0, this.unsigned);
+        }
+    };
+
+    /**
+     * Returns this Long with bits logically shifted to the right by the given amount. This is an alias of {@link Long#shiftRightUnsigned}.
+     * @function
+     * @param {number|!Long} numBits Number of bits
+     * @returns {!Long} Shifted Long
+     */
+    LongPrototype.shru = LongPrototype.shiftRightUnsigned;
+
+    /**
+     * Converts this Long to signed.
+     * @returns {!Long} Signed long
+     */
+    LongPrototype.toSigned = function toSigned() {
+        if (!this.unsigned)
+            return this;
+        return fromBits(this.low, this.high, false);
+    };
+
+    /**
+     * Converts this Long to unsigned.
+     * @returns {!Long} Unsigned long
+     */
+    LongPrototype.toUnsigned = function toUnsigned() {
+        if (this.unsigned)
+            return this;
+        return fromBits(this.low, this.high, true);
+    };
+
+    /**
+     * Converts this Long to its byte representation.
+     * @param {boolean=} le Whether little or big endian, defaults to big endian
+     * @returns {!Array.<number>} Byte representation
+     */
+    LongPrototype.toBytes = function(le) {
+        return le ? this.toBytesLE() : this.toBytesBE();
+    }
+
+    /**
+     * Converts this Long to its little endian byte representation.
+     * @returns {!Array.<number>} Little endian byte representation
+     */
+    LongPrototype.toBytesLE = function() {
+        var hi = this.high,
+            lo = this.low;
+        return [
+             lo         & 0xff,
+            (lo >>>  8) & 0xff,
+            (lo >>> 16) & 0xff,
+            (lo >>> 24) & 0xff,
+             hi         & 0xff,
+            (hi >>>  8) & 0xff,
+            (hi >>> 16) & 0xff,
+            (hi >>> 24) & 0xff
+        ];
+    }
+
+    /**
+     * Converts this Long to its big endian byte representation.
+     * @returns {!Array.<number>} Big endian byte representation
+     */
+    LongPrototype.toBytesBE = function() {
+        var hi = this.high,
+            lo = this.low;
+        return [
+            (hi >>> 24) & 0xff,
+            (hi >>> 16) & 0xff,
+            (hi >>>  8) & 0xff,
+             hi         & 0xff,
+            (lo >>> 24) & 0xff,
+            (lo >>> 16) & 0xff,
+            (lo >>>  8) & 0xff,
+             lo         & 0xff
+        ];
+    }
+
+    return Long;
+});
+
+},{}],117:[function(require,module,exports){
+},{"asn1.js":19}],124:[function(require,module,exports){
+},{"browserify-aes":39,"buffer":65,"evp_bytestokey":102}],125:[function(require,module,exports){
+},{"./aesid.json":122,"./asn1":123,"./fixProc":124,"browserify-aes":39,"buffer":65,"pbkdf2":127}],126:[function(require,module,exports){
+},{"./support":142,"querystring":154,"url":178}],130:[function(require,module,exports){
+},{"make-error-cause":117}],135:[function(require,module,exports){
+},{"./_stream_readable":159,"./_stream_writable":161,"core-util-is":68,"inherits":112,"process-nextick-args":143}],158:[function(require,module,exports){
+},{"./_stream_transform":160,"core-util-is":68,"inherits":112}],159:[function(require,module,exports){
+},{"./_stream_duplex":157,"./internal/streams/BufferList":162,"_process":144,"buffer":65,"buffer-shims":63,"core-util-is":68,"events":101,"inherits":112,"isarray":114,"process-nextick-args":143,"string_decoder/":177,"util":36}],160:[function(require,module,exports){
+},{"./_stream_duplex":157,"core-util-is":68,"inherits":112}],161:[function(require,module,exports){
+},{"./_stream_duplex":157,"_process":144,"buffer":65,"buffer-shims":63,"core-util-is":68,"events":101,"inherits":112,"process-nextick-args":143,"util-deprecate":180}],162:[function(require,module,exports){
+},{"./hash":168,"buffer":65,"inherits":112}],171:[function(require,module,exports){
+},{"./hash":168,"buffer":65,"inherits":112}],172:[function(require,module,exports){
+},{"./hash":168,"./sha256":173,"buffer":65,"inherits":112}],173:[function(require,module,exports){
+},{"./hash":168,"buffer":65,"inherits":112}],174:[function(require,module,exports){
+},{"./hash":168,"./sha512":175,"buffer":65,"inherits":112}],175:[function(require,module,exports){
+},{"./hash":168,"buffer":65,"inherits":112}],176:[function(require,module,exports){
+},{"events":101,"inherits":112,"readable-stream/duplex.js":156,"readable-stream/passthrough.js":163,"readable-stream/readable.js":164,"readable-stream/transform.js":165,"readable-stream/writable.js":166}],177:[function(require,module,exports){
+},{"buffer":65}],178:[function(require,module,exports){
+},{"./util":179,"punycode":151,"querystring":154}],179:[function(require,module,exports){
+},{}],180:[function(require,module,exports){
+},{}],181:[function(require,module,exports){
