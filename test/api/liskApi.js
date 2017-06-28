@@ -214,6 +214,40 @@ describe('Lisk.api()', function () {
 			(trimmedObj).should.be.ok;
 			(trimmedObj).should.be.eql({ myObj: '2' });
 		});
+
+		it('should accept numbers and strings as value', function () {
+			var obj = '123';
+
+			var trimmedObj = utils.trimObj(obj);
+			(trimmedObj).should.be.ok;
+			(trimmedObj).should.be.equal('123');
+		});
+
+		it('should accept numbers and strings as value', function () {
+			var obj = {
+				"account": {
+					12: 12
+				}
+			};
+
+			var trimmedObj = utils.trimObj(obj);
+			(trimmedObj).should.be.ok;
+			(trimmedObj).should.be.eql({ "account": { "12": "12" } });
+		});
+
+		it('should accept an array as initial value', function () {
+			var obj = [
+				{
+					"account": {
+						12: 12
+					}
+				}
+			];
+
+			var trimmedObj = utils.trimObj(obj);
+			(trimmedObj).should.be.ok;
+			(trimmedObj).should.be.eql([{ "account": { "12": "12" } }]);
+		});
 	});
 
 	describe('#toQueryString', function () {
