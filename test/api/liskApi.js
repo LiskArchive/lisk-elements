@@ -350,7 +350,7 @@ describe('Lisk.api()', function () {
 
 		it('should list standby delegates', function () {
 			var callback = sinon.spy();
-			var options =  { limit: '1', orderBy: 'rate:asc', offset: 101 };
+			var options =  { limit: '1', sort: 'rate:asc', offset: 101 };
 			sinon.stub(LSK, 'sendRequest').callsArgWith(2, expectedResponse);
 
 			LSK.listStandbyDelegates('1', callback);
@@ -379,12 +379,12 @@ describe('Lisk.api()', function () {
 
 		it('should find a delegate by name', function () {
 			var callback = sinon.spy();
-			var options = { q: 'oliver' };
+			var options = { username: 'oliver' };
 			sinon.stub(LSK, 'sendRequest').callsArgWith(2, expectedResponse);
 
 			LSK.searchDelegateByUsername('oliver', callback);
 
-			(LSK.sendRequest.calledWith('delegates/search/', options)).should.be.true();
+			(LSK.sendRequest.calledWith('delegates/', options)).should.be.true();
 			(callback.called).should.be.true();
 			(callback.calledWith(expectedResponse)).should.be.true();
 			LSK.sendRequest.restore();
@@ -527,7 +527,7 @@ describe('Lisk.api()', function () {
 				recipientId: address,
 				limit: '1',
 				offset: '2',
-				orderBy: 'timestamp:desc'
+				sort: 'timestamp:desc'
 			};
 			sinon.stub(LSK, 'sendRequest').callsArgWith(2, expectedResponse);
 
@@ -574,7 +574,7 @@ describe('Lisk.api()', function () {
 
 			LSK.getTransaction(transactionId, callback);
 
-			(LSK.sendRequest.calledWith('transactions/get', options)).should.be.true();
+			(LSK.sendRequest.calledWith('transactions', options)).should.be.true();
 			(callback.called).should.be.true();
 			(callback.calledWith(expectedResponse)).should.be.true();
 			LSK.sendRequest.restore();
@@ -610,7 +610,7 @@ describe('Lisk.api()', function () {
 
 			LSK.listVotes(address, callback);
 
-			(LSK.sendRequest.calledWith('accounts/delegates', options)).should.be.true();
+			(LSK.sendRequest.calledWith('votes', options)).should.be.true();
 			(callback.called).should.be.true();
 			(callback.calledWith(expectedResponse)).should.be.true();
 			LSK.sendRequest.restore();
@@ -632,50 +632,15 @@ describe('Lisk.api()', function () {
 
 		it('should list voters of an account', function () {
 			var callback = sinon.spy();
-			var publicKey= '6a01c4b86f4519ec9fa5c3288ae20e2e7a58822ebe891fb81e839588b95b242a';
-			var options = {
-				publicKey: publicKey
-			};
-			sinon.stub(LSK, 'sendRequest').callsArgWith(2, expectedResponse);
-
-			LSK.listVoters(publicKey, callback);
-
-			(LSK.sendRequest.calledWith('delegates/voters', options)).should.be.true();
-			(callback.called).should.be.true();
-			(callback.calledWith(expectedResponse)).should.be.true();
-			LSK.sendRequest.restore();
-		});
-	});
-
-	describe('#getAccount', function () {
-		var expectedResponse = {
-			body: {
-				success: true,
-				account: {
-					address: '12731041415715717263L',
-					unconfirmedBalance: '7139704369275',
-					balance: '7139704369275',
-					publicKey: 'a81d59b68ba8942d60c74d10bc6488adec2ae1fa9b564a22447289076fe7b1e4',
-					unconfirmedSignature: 1,
-					secondSignature: 1,
-					secondPublicKey: 'b823d706cec22383f9f10bb5095a66ed909d9224da0707168dad9d1c9cdef29c',
-					multisignatures: [],
-					'u_multisignatures': [],
-				},
-			},
-		};
-
-		it('should get account information', function () {
-			var callback = sinon.spy();
-			var address= '12731041415715717263L';
+			var address= '7288548278191946381L';
 			var options = {
 				address: address
 			};
 			sinon.stub(LSK, 'sendRequest').callsArgWith(2, expectedResponse);
 
-			LSK.getAccount(address, callback);
+			LSK.listVoters(address, callback);
 
-			(LSK.sendRequest.calledWith('accounts', options)).should.be.true();
+			(LSK.sendRequest.calledWith('voters', options)).should.be.true();
 			(callback.called).should.be.true();
 			(callback.calledWith(expectedResponse)).should.be.true();
 			LSK.sendRequest.restore();
