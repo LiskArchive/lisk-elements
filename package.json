@@ -26,6 +26,7 @@
     "chai": "=4.0.0",
     "chai-http": "=3.0.0",
     "coveralls": "=2.13.1",
+    "express": "^4.15.3",
     "grunt": "=1.0.1",
     "grunt-browserify": "=5.0.0",
     "grunt-contrib-nodeunit": "=1.0.0",
