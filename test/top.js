@@ -21,5 +21,4 @@ describe('top', function () {
 
 	importTest('transactions newCrypto', './transactions/crypto/index.js');
 	importTest('api', './api/liskApi.js');
-	importTest('api', './api/parseTransaction.js');
 });
