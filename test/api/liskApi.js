@@ -572,6 +572,7 @@ describe('Lisk.api()', function () {
 			(callback.calledWith(expectedResponse)).should.be.true();
 			LSK.sendRequest.restore();
 		});
+
 	});
 
 	describe('#getTransaction', function () {
@@ -855,6 +856,109 @@ describe('Lisk.api()', function () {
 				done();
 			});
 		});
+	});
+
+	describe('#createDelegate', function () {
+
+		it('should be able to create a delegate', function () {
+
+			var LSK = lisk.api({ testnet: true });
+			var callback = sinon.spy();
+
+			sinon.stub(LSK, 'broadcastSignedTransaction').callsArg(1);
+
+			LSK.createDelegate('secret', 'testUsername', 'secondSecret', callback);
+
+			(LSK.broadcastSignedTransaction.called).should.be.true();
+			(LSK.broadcastSignedTransaction.args[0][0].type).should.be.equal(2);
+			(LSK.broadcastSignedTransaction.args[0][0].fee).should.be.equal(2500000000);
+			(LSK.broadcastSignedTransaction.args[0][0].asset.delegate.username).should.be.equal('testUsername');
+			LSK.broadcastSignedTransaction.restore();
+
+		});
+
+	});
+
+	describe('#multiSignatureSign', function () {
+
+		it('should be able to create a multiSignatureSign', function () {
+
+			var LSK = lisk.api({ testnet: true });
+			var callback = sinon.spy();
+
+			sinon.stub(LSK, 'broadcastSignedTransaction').yields();
+
+			var tx = {
+				amount: "100",
+				asset: {},
+				fee: 10000000,
+				id: "15936820115091968386",
+				recipientId: "784237489382434L",
+				requesterPublicKey: "5d036a858ce89f844491762eb89e2bfbd50a4a0a0da658e4b2628b25b117ae09",
+				senderPublicKey: "5d036a858ce89f844491762eb89e2bfbd50a4a0a0da658e4b2628b25b117ae09",
+				signSignature: "d06822a99d799b90dcf739acfbbc9a03a946d8fcb649545a32269de2d09d7ea11bf5a23ac0a4965b0d178a01c3277594893deaed5185085c5f948e7897081b02",
+				signature: "5ad2f6454d92e163c9e4edfdff5b1b8b6684b7d83654ecf63d16edb21bbd085aefe8d2bd7f75cca9425fc03fac90eb69602d686ca24e12242557bf990840570a",
+				signatures: [],
+				timestamp: 34702079,
+				type: 0
+			};
+
+			LSK.multiSignatureSign('secret', tx, callback);
+
+			(LSK.broadcastSignedTransaction.called).should.be.true();
+			(LSK.broadcastSignedTransaction.args[0][0]).should.be.equal('5ad2f6454d92e163c9e4edfdff5b1b8b6684b7d83654ecf63d16edb21bbd085aefe8d2bd7f75cca9425fc03fac90eb69602d686ca24e12242557bf990840570a');
+			LSK.broadcastSignedTransaction.restore();
+
+		});
+
+	});
+
+	describe('#createMultisignature', function () {
+
+		it('should be able to create a multisignature account', function () {
+
+			var minimumSignatures = 6;
+			var requestLifeTime = 8;
+			var multiSignaturePublicKeyArray = ['+123456789', '+1236345489', '+123452349', '-987654321', '+12323432489','+1234234789', '-82348375839'];
+
+			var LSK = lisk.api({ testnet: true });
+			var callback = sinon.spy();
+
+			sinon.stub(LSK, 'broadcastSignedTransaction').callsArg(1);
+
+
+			LSK.createMultisignature('secret', multiSignaturePublicKeyArray, requestLifeTime, minimumSignatures, 'secondSecret', callback);
+
+			(LSK.broadcastSignedTransaction.args[0][0].type).should.be.equal(4);
+			(LSK.broadcastSignedTransaction.args[0][0].fee).should.be.equal(4000000000);
+			(LSK.broadcastSignedTransaction.args[0][0].asset.multisignature).should.be.type('object');
+			LSK.broadcastSignedTransaction.restore();
+
+		});
+
+	});
+
+	describe('#sendVotes', function () {
+
+		it('should be able to send votes', function () {
+
+			var votes = ['+dd786687dd2399605ce8fe70212d078db1a2fc6effba127defb176a004cec6d4', '+adc4942d3821c8803f8794646c3e3934eb08d3768dff3f2fd9e9e6030635e344', '-ae5afc2db90302dbf9253640467dfbc107b29ed35b8752df9775acd7f644992c'];
+
+			var LSK = lisk.api({ testnet: true });
+			var callback = sinon.spy();
+
+			sinon.stub(LSK, 'broadcastSignedTransaction').callsArg(1);
+
+
+			LSK.sendVotes('secret', votes, 'secondSecret', callback);
+
+			(LSK.broadcastSignedTransaction.args[0][0].type).should.be.equal(3);
+			(LSK.broadcastSignedTransaction.args[0][0].fee).should.be.equal(100000000);
+			(LSK.broadcastSignedTransaction.args[0][0].asset.votes).should.be.eql(votes);
+			LSK.broadcastSignedTransaction.restore();
+
+		});
+
 	});
 
 	describe('#broadcastSignedTransaction', function () {
