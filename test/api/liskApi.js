@@ -225,20 +225,20 @@ describe('Lisk.api()', function () {
 
 		it('should accept numbers and strings as value', function () {
 			var obj = {
-				"account": {
+				'account': {
 					12: 12
 				}
 			};
 
 			var trimmedObj = utils.trimObj(obj);
 			(trimmedObj).should.be.ok;
-			(trimmedObj).should.be.eql({ "account": { "12": "12" } });
+			(trimmedObj).should.be.eql({ 'account': { '12': '12' } });
 		});
 
 		it('should accept an array as initial value', function () {
 			var obj = [
 				{
-					"account": {
+					'account': {
 						12: 12
 					}
 				}
@@ -246,7 +246,7 @@ describe('Lisk.api()', function () {
 
 			var trimmedObj = utils.trimObj(obj);
 			(trimmedObj).should.be.ok;
-			(trimmedObj).should.be.eql([{ "account": { "12": "12" } }]);
+			(trimmedObj).should.be.eql([{ 'account': { '12': '12' } }]);
 		});
 	});
 
@@ -889,15 +889,15 @@ describe('Lisk.api()', function () {
 			sinon.stub(LSK, 'broadcastSignedTransaction').yields();
 
 			var tx = {
-				amount: "100",
+				amount: '100',
 				asset: {},
 				fee: 10000000,
-				id: "15936820115091968386",
-				recipientId: "784237489382434L",
-				requesterPublicKey: "5d036a858ce89f844491762eb89e2bfbd50a4a0a0da658e4b2628b25b117ae09",
-				senderPublicKey: "5d036a858ce89f844491762eb89e2bfbd50a4a0a0da658e4b2628b25b117ae09",
-				signSignature: "d06822a99d799b90dcf739acfbbc9a03a946d8fcb649545a32269de2d09d7ea11bf5a23ac0a4965b0d178a01c3277594893deaed5185085c5f948e7897081b02",
-				signature: "5ad2f6454d92e163c9e4edfdff5b1b8b6684b7d83654ecf63d16edb21bbd085aefe8d2bd7f75cca9425fc03fac90eb69602d686ca24e12242557bf990840570a",
+				id: '15936820115091968386',
+				recipientId: '784237489382434L',
+				requesterPublicKey: '5d036a858ce89f844491762eb89e2bfbd50a4a0a0da658e4b2628b25b117ae09',
+				senderPublicKey: '5d036a858ce89f844491762eb89e2bfbd50a4a0a0da658e4b2628b25b117ae09',
+				signSignature: 'd06822a99d799b90dcf739acfbbc9a03a946d8fcb649545a32269de2d09d7ea11bf5a23ac0a4965b0d178a01c3277594893deaed5185085c5f948e7897081b02',
+				signature: '5ad2f6454d92e163c9e4edfdff5b1b8b6684b7d83654ecf63d16edb21bbd085aefe8d2bd7f75cca9425fc03fac90eb69602d686ca24e12242557bf990840570a',
 				signatures: [],
 				timestamp: 34702079,
 				type: 0
