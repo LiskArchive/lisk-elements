@@ -28,7 +28,7 @@ describe('multisignature.js', function () {
 		var minimumSignatures = 2;
 		var requestLifeTime = 5;
 		var multiSignaturePublicKeyArray = ['+123456789', '-987654321'];
-		var createMultisig = multisignature.createMultisignature('secret', '', multiSignaturePublicKeyArray, requestLifeTime, minimumSignatures);
+		var createMultisig = multisignature.createMultisignature('secret', multiSignaturePublicKeyArray, requestLifeTime, minimumSignatures, '');
 
 		it('should create Multisignature account with single secret', function () {
 			(createMultisig).should.be.ok;
@@ -60,7 +60,7 @@ describe('multisignature.js', function () {
 		var minimumSignatures2 = 6;
 		var requestLifeTime2 = 8;
 		var multiSignaturePublicKeyArray2 = ['+123456789', '+1236345489', '+123452349', '-987654321', '+12323432489','+1234234789', '-82348375839'];
-		var createMultisig2 = multisignature.createMultisignature('secret', 'secondSecret', multiSignaturePublicKeyArray2, requestLifeTime2, minimumSignatures2);
+		var createMultisig2 = multisignature.createMultisignature('secret', multiSignaturePublicKeyArray2, requestLifeTime2, minimumSignatures2, 'secondSecret');
 
 		it('should create Multisignature account with two secrets', function () {
 			(createMultisig2).should.be.ok;
@@ -137,8 +137,6 @@ describe('multisignature.js', function () {
 			var pubKey = lisk.crypto.getPrivateAndPublicKeyFromSecret(secret).publicKey;
 
 			(msigTransaction2.requesterPublicKey).should.be.equal(pubKey);
-
-			console.log(msigTransaction2);
 
 		});
 

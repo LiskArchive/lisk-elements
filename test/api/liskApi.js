@@ -214,6 +214,40 @@ describe('Lisk.api()', function () {
 			(trimmedObj).should.be.ok;
 			(trimmedObj).should.be.eql({ myObj: '2' });
 		});
+
+		it('should accept numbers and strings as value', function () {
+			var obj = '123';
+
+			var trimmedObj = utils.trimObj(obj);
+			(trimmedObj).should.be.ok;
+			(trimmedObj).should.be.equal('123');
+		});
+
+		it('should accept numbers and strings as value', function () {
+			var obj = {
+				'account': {
+					12: 12
+				}
+			};
+
+			var trimmedObj = utils.trimObj(obj);
+			(trimmedObj).should.be.ok;
+			(trimmedObj).should.be.eql({ 'account': { '12': '12' } });
+		});
+
+		it('should accept an array as initial value', function () {
+			var obj = [
+				{
+					'account': {
+						12: 12
+					}
+				}
+			];
+
+			var trimmedObj = utils.trimObj(obj);
+			(trimmedObj).should.be.ok;
+			(trimmedObj).should.be.eql([{ 'account': { '12': '12' } }]);
+		});
 	});
 
 	describe('#toQueryString', function () {
@@ -256,101 +290,6 @@ describe('Lisk.api()', function () {
 		});
 	});
 
-	describe('#checkRequest', function () {
-
-		it('should identify GET requests', function () {
-			var requestType = 'api/loader/status';
-			var options = '';
-			var checkRequestAnswer = privateApi.checkRequest.call(LSK, requestType, options);
-
-			(checkRequestAnswer).should.be.ok;
-			(checkRequestAnswer).should.be.equal('GET');
-
-			var requestType = 'api/loader/status/sync';
-			var options = '';
-			var checkRequestAnswer = privateApi.checkRequest.call(LSK, requestType, options);
-
-			(checkRequestAnswer).should.be.ok;
-			(checkRequestAnswer).should.be.equal('GET');
-
-			var requestType = 'api/loader/status/ping';
-			var options = '';
-			var checkRequestAnswer = privateApi.checkRequest.call(LSK, requestType, options);
-
-			(checkRequestAnswer).should.be.ok;
-			(checkRequestAnswer).should.be.equal('GET');
-
-			var requestType = 'api/transactions';
-			var options = {blockId: '123', senderId: '123'};
-			var checkRequestAnswer = privateApi.checkRequest.call(LSK, requestType, options);
-
-			(checkRequestAnswer).should.be.ok;
-			(checkRequestAnswer).should.be.equal('GET');
-		});
-
-		it('should identify POST requests', function () {
-			var requestType = 'accounts/generatePublicKey';
-			var options = {secret: '123'};
-			var checkRequestAnswer = privateApi.checkRequest.call(LSK, requestType, options);
-
-			(checkRequestAnswer).should.be.ok;
-			(checkRequestAnswer).should.be.equal('POST');
-
-			var requestType = 'accounts/open';
-			var options = {secret: '123'};
-			var checkRequestAnswer = privateApi.checkRequest.call(LSK, requestType, options);
-
-			(checkRequestAnswer).should.be.ok;
-			(checkRequestAnswer).should.be.equal('POST');
-
-			var requestType = 'multisignatures/sign';
-			var options = {secret: '123'};
-			var checkRequestAnswer = privateApi.checkRequest.call(LSK, requestType, options);
-
-			(checkRequestAnswer).should.be.ok;
-			(checkRequestAnswer).should.be.equal('POST');
-		});
-
-		it('should identify PUT requests', function () {
-			var requestType = 'accounts/delegates';
-			var options = {secret: '123'};
-			var checkRequestAnswer = privateApi.checkRequest.call(LSK, requestType, options);
-
-			(checkRequestAnswer).should.be.ok;
-			(checkRequestAnswer).should.be.equal('PUT');
-
-			var requestType = 'signatures';
-			var options = {secret: '123'};
-			var checkRequestAnswer = privateApi.checkRequest.call(LSK, requestType, options);
-
-			(checkRequestAnswer).should.be.ok;
-			(checkRequestAnswer).should.be.equal('PUT');
-
-			var requestType = 'transactions';
-			var options = {secret: '123'};
-			var checkRequestAnswer = privateApi.checkRequest.call(LSK, requestType, options);
-
-			(checkRequestAnswer).should.be.ok;
-			(checkRequestAnswer).should.be.equal('PUT');
-		});
-
-		it('should identify NOACTION requests', function () {
-			var requestType = 'delegates/forging/enable';
-			var options = {secret: '123'};
-			var checkRequestAnswer = privateApi.checkRequest.call(LSK, requestType, options);
-
-			(checkRequestAnswer).should.be.ok;
-			(checkRequestAnswer).should.be.equal('NOACTION');
-
-			var requestType = 'dapps/uninstall';
-			var options = {secret: '123'};
-			var checkRequestAnswer = privateApi.checkRequest.call(LSK, requestType, options);
-
-			(checkRequestAnswer).should.be.ok;
-			(checkRequestAnswer).should.be.equal('NOACTION');
-		});
-	});
-
 	describe('#checkOptions', function () {
 
 		it('should not accept falsy options like undefined', function (done) {
@@ -371,94 +310,6 @@ describe('Lisk.api()', function () {
 			}
 		});
 
-	});
-
-	describe('#changeRequest', function () {
-
-		it('should give the correct parameters for GET requests', function () {
-			var requestType = 'transactions';
-			var options = {blockId: '123', senderId: '123'};
-			var LSK = lisk.api({ node: 'localhost' });
-			var checkRequestAnswer = privateApi.changeRequest.call(LSK, requestType, options);
-
-			var output = {
-				nethash: '',
-				requestMethod: 'GET',
-				requestParams: {
-					blockId: '123',
-					senderId: '123'
-				},
-				requestUrl: 'http://localhost:8000/api/transactions?blockId=123&senderId=123'
-			};
-
-			(checkRequestAnswer).should.be.ok;
-			(checkRequestAnswer).should.be.eql(output);
-		});
-
-		it('should give the correct parameters for GET requests with parameters', function () {
-			var requestType = 'delegates/search/';
-			var options = {q: 'oliver'};
-			var LSK = lisk.api({ node: 'localhost' });
-			var checkRequestAnswer = privateApi.changeRequest.call(LSK, requestType, options);
-
-			var output = {
-				nethash: '',
-				requestMethod: 'GET',
-				requestParams: {
-					q: 'oliver',
-				},
-				requestUrl: 'http://localhost:8000/api/delegates/search/?q=oliver'
-			};
-
-			(checkRequestAnswer).should.be.ok;
-			(checkRequestAnswer).should.be.eql(output);
-		});
-
-		it('should give the correct parameters for NOACTION requests', function () {
-			var requestType = 'delegates/forging/enable';
-			var options = {secret: '123'};
-			var LSK = lisk.api({ node: 'localhost' });
-			var checkRequestAnswer = privateApi.changeRequest.call(LSK, requestType, options);
-
-			var output = {
-				nethash: '',
-				requestMethod: '',
-				requestParams: '',
-				requestUrl: ''
-			};
-
-			(checkRequestAnswer).should.be.ok;
-			(checkRequestAnswer).should.be.eql(output);
-		});
-
-		it('should give the correct parameters for POST requests', function () {
-			var requestType = 'accounts/open';
-			var options = {secret: '123'};
-			var LSK = lisk.api({ node: 'localhost' });
-			var checkRequestAnswer = privateApi.changeRequest.call(LSK, requestType, options);
-
-			var output = {
-				nethash: '',
-				requestMethod: 'GET',
-				requestParams: {secret: '123'},
-				requestUrl: 'http://localhost:8000/api/accounts?address=12475940823804898745L'
-			};
-
-			(checkRequestAnswer).should.be.ok;
-			(checkRequestAnswer).should.be.eql(output);
-		});
-
-		it('should give the correct parameters for PUT requests', function () {
-			var requestType = 'signatures';
-			var options = {secret: '123', secondSecret: '1234'};
-			var LSK = lisk.api({ node: 'localhost' });
-			var checkRequestAnswer = privateApi.changeRequest.call(LSK, requestType, options);
-
-			(checkRequestAnswer).should.be.ok;
-			(checkRequestAnswer.requestParams.transaction).should.have.property('id').which.is.a.String();
-			(checkRequestAnswer.requestParams.transaction).should.have.property('amount').which.is.a.Number();
-			(checkRequestAnswer.requestParams).should.have.property('transaction').which.is.a.Object();
-		});
 	});
 
 	describe('#sendRequest', function () {
@@ -533,7 +384,7 @@ describe('Lisk.api()', function () {
 
 		it('should list standby delegates', function () {
 			var callback = sinon.spy();
-			var options =  { limit: '1', orderBy: 'rate:asc', offset: 101 };
+			var options =  { limit: '1', sort: 'rate:asc', offset: 101 };
 			sinon.stub(LSK, 'sendRequest').callsArgWith(2, expectedResponse);
 
 			LSK.listStandbyDelegates('1', callback);
@@ -562,12 +413,12 @@ describe('Lisk.api()', function () {
 
 		it('should find a delegate by name', function () {
 			var callback = sinon.spy();
-			var options = { q: 'oliver' };
+			var options = { username: 'oliver' };
 			sinon.stub(LSK, 'sendRequest').callsArgWith(2, expectedResponse);
 
 			LSK.searchDelegateByUsername('oliver', callback);
 
-			(LSK.sendRequest.calledWith('delegates/search/', options)).should.be.true();
+			(LSK.sendRequest.calledWith('delegates/', options)).should.be.true();
 			(callback.called).should.be.true();
 			(callback.calledWith(expectedResponse)).should.be.true();
 			LSK.sendRequest.restore();
@@ -710,7 +561,7 @@ describe('Lisk.api()', function () {
 				recipientId: address,
 				limit: '1',
 				offset: '2',
-				orderBy: 'timestamp:desc'
+				sort: 'timestamp:desc'
 			};
 			sinon.stub(LSK, 'sendRequest').callsArgWith(2, expectedResponse);
 
@@ -721,6 +572,7 @@ describe('Lisk.api()', function () {
 			(callback.calledWith(expectedResponse)).should.be.true();
 			LSK.sendRequest.restore();
 		});
+
 	});
 
 	describe('#getTransaction', function () {
@@ -757,7 +609,7 @@ describe('Lisk.api()', function () {
 
 			LSK.getTransaction(transactionId, callback);
 
-			(LSK.sendRequest.calledWith('transactions/get', options)).should.be.true();
+			(LSK.sendRequest.calledWith('transactions', options)).should.be.true();
 			(callback.called).should.be.true();
 			(callback.calledWith(expectedResponse)).should.be.true();
 			LSK.sendRequest.restore();
@@ -793,7 +645,7 @@ describe('Lisk.api()', function () {
 
 			LSK.listVotes(address, callback);
 
-			(LSK.sendRequest.calledWith('accounts/delegates', options)).should.be.true();
+			(LSK.sendRequest.calledWith('votes', options)).should.be.true();
 			(callback.called).should.be.true();
 			(callback.calledWith(expectedResponse)).should.be.true();
 			LSK.sendRequest.restore();
@@ -815,70 +667,18 @@ describe('Lisk.api()', function () {
 
 		it('should list voters of an account', function () {
 			var callback = sinon.spy();
-			var publicKey= '6a01c4b86f4519ec9fa5c3288ae20e2e7a58822ebe891fb81e839588b95b242a';
-			var options = {
-				publicKey: publicKey
-			};
-			sinon.stub(LSK, 'sendRequest').callsArgWith(2, expectedResponse);
-
-			LSK.listVoters(publicKey, callback);
-
-			(LSK.sendRequest.calledWith('delegates/voters', options)).should.be.true();
-			(callback.called).should.be.true();
-			(callback.calledWith(expectedResponse)).should.be.true();
-			LSK.sendRequest.restore();
-		});
-	});
-
-	describe('#getAccount', function () {
-		var expectedResponse = {
-			body: {
-				success: true,
-				account: {
-					address: '12731041415715717263L',
-					unconfirmedBalance: '7139704369275',
-					balance: '7139704369275',
-					publicKey: 'a81d59b68ba8942d60c74d10bc6488adec2ae1fa9b564a22447289076fe7b1e4',
-					unconfirmedSignature: 1,
-					secondSignature: 1,
-					secondPublicKey: 'b823d706cec22383f9f10bb5095a66ed909d9224da0707168dad9d1c9cdef29c',
-					multisignatures: [],
-					'u_multisignatures': [],
-				},
-			},
-		};
-
-		it('should get account information', function () {
-			var callback = sinon.spy();
-			var address= '12731041415715717263L';
+			var address= '7288548278191946381L';
 			var options = {
 				address: address
 			};
 			sinon.stub(LSK, 'sendRequest').callsArgWith(2, expectedResponse);
 
-			LSK.getAccount(address, callback);
+			LSK.listVoters(address, callback);
 
-			(LSK.sendRequest.calledWith('accounts', options)).should.be.true();
+			(LSK.sendRequest.calledWith('voters', options)).should.be.true();
 			(callback.called).should.be.true();
 			(callback.calledWith(expectedResponse)).should.be.true();
 			LSK.sendRequest.restore();
-		});
-	});
-
-	describe('#generateAccount', function () {
-		var expectedRessult= {
-			privateKey:
-				'7683ba873c5e5aa6c12df564a60a93a519e2a5682cf5358a6a5b9ccc70607e96d803281f421e35ca585682829119c270a094fa9a1da2edc3dd65a3dc0dc46497',
-			publicKey: 'd803281f421e35ca585682829119c270a094fa9a1da2edc3dd65a3dc0dc46497'
-		};
-
-		it('should get publicKey', function () {
-			var callback = sinon.spy();
-			var secret = 'dream capable public heart sauce pilot ordinary fever final brand flock boring';
-
-			LSK.generateAccount(secret, callback);
-			(callback.called).should.be.true();
-			(callback.calledWith(expectedRessult)).should.be.true();
 		});
 	});
 
@@ -1012,21 +812,6 @@ describe('Lisk.api()', function () {
 			});
 		});
 
-		it('should route the request accordingly when request method is POST but GET can be used', function (done) {
-			lisk.api().sendRequest('accounts/open', { secret: '123' }).then(function (result) {
-				(result).should.be.type('object');
-				(result.account).should.be.ok;
-				done();
-			});
-		});
-
-		it('should respond with error when API call is disabled', function (done) {
-			lisk.api().sendRequest('delegates/forging/enable', { secret: '123' }).then(function (result) {
-				(result.error).should.be.equal('Forging not available via offlineRequest');
-				done();
-			});
-		});
-
 		it('should be able to use sendRequest as a promise for POST', function (done) {
 			var options = {
 				ssl: false,
@@ -1071,6 +856,109 @@ describe('Lisk.api()', function () {
 				done();
 			});
 		});
+	});
+
+	describe('#createDelegate', function () {
+
+		it('should be able to create a delegate', function () {
+
+			var LSK = lisk.api({ testnet: true });
+			var callback = sinon.spy();
+
+			sinon.stub(LSK, 'broadcastSignedTransaction').callsArg(1);
+
+			LSK.createDelegate('secret', 'testUsername', 'secondSecret', callback);
+
+			(LSK.broadcastSignedTransaction.called).should.be.true();
+			(LSK.broadcastSignedTransaction.args[0][0].type).should.be.equal(2);
+			(LSK.broadcastSignedTransaction.args[0][0].fee).should.be.equal(2500000000);
+			(LSK.broadcastSignedTransaction.args[0][0].asset.delegate.username).should.be.equal('testUsername');
+			LSK.broadcastSignedTransaction.restore();
+
+		});
+
+	});
+
+	describe('#multiSignatureSign', function () {
+
+		it('should be able to create a multiSignatureSign', function () {
+
+			var LSK = lisk.api({ testnet: true });
+			var callback = sinon.spy();
+
+			sinon.stub(LSK, 'broadcastSignedTransaction').yields();
+
+			var tx = {
+				amount: '100',
+				asset: {},
+				fee: 10000000,
+				id: '15936820115091968386',
+				recipientId: '784237489382434L',
+				requesterPublicKey: '5d036a858ce89f844491762eb89e2bfbd50a4a0a0da658e4b2628b25b117ae09',
+				senderPublicKey: '5d036a858ce89f844491762eb89e2bfbd50a4a0a0da658e4b2628b25b117ae09',
+				signSignature: 'd06822a99d799b90dcf739acfbbc9a03a946d8fcb649545a32269de2d09d7ea11bf5a23ac0a4965b0d178a01c3277594893deaed5185085c5f948e7897081b02',
+				signature: '5ad2f6454d92e163c9e4edfdff5b1b8b6684b7d83654ecf63d16edb21bbd085aefe8d2bd7f75cca9425fc03fac90eb69602d686ca24e12242557bf990840570a',
+				signatures: [],
+				timestamp: 34702079,
+				type: 0
+			};
+
+			LSK.multiSignatureSign('secret', tx, callback);
+
+			(LSK.broadcastSignedTransaction.called).should.be.true();
+			(LSK.broadcastSignedTransaction.args[0][0]).should.be.equal('5ad2f6454d92e163c9e4edfdff5b1b8b6684b7d83654ecf63d16edb21bbd085aefe8d2bd7f75cca9425fc03fac90eb69602d686ca24e12242557bf990840570a');
+			LSK.broadcastSignedTransaction.restore();
+
+		});
+
+	});
+
+	describe('#createMultisignature', function () {
+
+		it('should be able to create a multisignature account', function () {
+
+			var minimumSignatures = 6;
+			var requestLifeTime = 8;
+			var multiSignaturePublicKeyArray = ['+123456789', '+1236345489', '+123452349', '-987654321', '+12323432489','+1234234789', '-82348375839'];
+
+			var LSK = lisk.api({ testnet: true });
+			var callback = sinon.spy();
+
+			sinon.stub(LSK, 'broadcastSignedTransaction').callsArg(1);
+
+
+			LSK.createMultisignature('secret', multiSignaturePublicKeyArray, requestLifeTime, minimumSignatures, 'secondSecret', callback);
+
+			(LSK.broadcastSignedTransaction.args[0][0].type).should.be.equal(4);
+			(LSK.broadcastSignedTransaction.args[0][0].fee).should.be.equal(4000000000);
+			(LSK.broadcastSignedTransaction.args[0][0].asset.multisignature).should.be.type('object');
+			LSK.broadcastSignedTransaction.restore();
+
+		});
+
+	});
+
+	describe('#sendVotes', function () {
+
+		it('should be able to send votes', function () {
+
+			var votes = ['+dd786687dd2399605ce8fe70212d078db1a2fc6effba127defb176a004cec6d4', '+adc4942d3821c8803f8794646c3e3934eb08d3768dff3f2fd9e9e6030635e344', '-ae5afc2db90302dbf9253640467dfbc107b29ed35b8752df9775acd7f644992c'];
+
+			var LSK = lisk.api({ testnet: true });
+			var callback = sinon.spy();
+
+			sinon.stub(LSK, 'broadcastSignedTransaction').callsArg(1);
+
+
+			LSK.sendVotes('secret', votes, 'secondSecret', callback);
+
+			(LSK.broadcastSignedTransaction.args[0][0].type).should.be.equal(3);
+			(LSK.broadcastSignedTransaction.args[0][0].fee).should.be.equal(100000000);
+			(LSK.broadcastSignedTransaction.args[0][0].asset.votes).should.be.eql(votes);
+			LSK.broadcastSignedTransaction.restore();
+
+		});
+
 	});
 
 	describe('#broadcastSignedTransaction', function () {
