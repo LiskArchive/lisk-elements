@@ -1,6 +1,7 @@
 if (typeof module !== 'undefined' && module.exports) {
 	var common = require('../common');
 	var lisk = common.lisk;
+	var sinon = common.sinon;
 	var privateApi = common.privateApi;
 	var utils = common.utils;
 	process.env.NODE_ENV = 'test';
