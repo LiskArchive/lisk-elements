@@ -466,14 +466,14 @@ describe('Lisk.api()', function () {
 		};
 
 		it('should receive Height from a random public peer', function (done) {
-			sinon.stub(LSK, 'sendRequestPromise').resolves(expectedResponse);
+			sinon.stub(privateApi, 'sendRequestPromise').resolves(expectedResponse);
 
 			LSK.sendRequest('blocks/getHeight', function (data) {
 				(data).should.be.ok;
 				(data).should.be.type('object');
 				(data.success).should.be.true();
 
-				LSK.sendRequestPromise.restore();
+				privateApi.sendRequestPromise.restore();
 				done();
 			});
 		});

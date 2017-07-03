@@ -222,11 +222,12 @@ describe('transaction.js', function () {
 		it('should create transaction with second signature and data', function () {
 			trs = createTransaction('58191285901858109L', 1000, 'secret', secondSecret, 'data');
 			(trs).should.be.ok;
+			(trs.fee).should.be.equal(20000000);
 		});
 
 		describe('returned transaction', function () {
 			it('should conatain data field with string value', function () {
-				(trs.data).should.be.type('string');
+				(trs.asset.data).should.be.type('string');
 			});
 		});
 
