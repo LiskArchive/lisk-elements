@@ -1004,26 +1004,23 @@ describe('Lisk.api()', function () {
 	describe('#sendRequest with promise', function () {
 
 		it('should be able to use sendRequest as a promise for GET', function (done) {
-			lisk.api().sendRequest('blocks/getHeight', {}).then(function (result) {
+			return lisk.api().sendRequest('blocks/getHeight', {}).then(function (result) {
 				(result).should.be.type('object');
 				(result.success).should.be.equal(true);
 				(result.height).should.be.type('number');
-				done();
 			});
 		});
 
 		it('should route the request accordingly when request method is POST but GET can be used', function (done) {
-			lisk.api().sendRequest('accounts/open', { secret: '123' }).then(function (result) {
+			return lisk.api().sendRequest('accounts/open', { secret: '123' }).then(function (result) {
 				(result).should.be.type('object');
 				(result.account).should.be.ok;
-				done();
 			});
 		});
 
 		it('should respond with error when API call is disabled', function (done) {
-			lisk.api().sendRequest('delegates/forging/enable', { secret: '123' }).then(function (result) {
+			return lisk.api().sendRequest('delegates/forging/enable', { secret: '123' }).then(function (result) {
 				(result.error).should.be.equal('Forging not available via offlineRequest');
-				done();
 			});
 		});
 
@@ -1043,10 +1040,9 @@ describe('Lisk.api()', function () {
 			var recipient = '10279923186189318946L';
 			var amount = 100000000;
 
-			LSKnode.sendRequest('transactions', { recipientId: recipient, secret: secret, secondSecret: secondSecret, amount: amount }).then(function (result) {
+			return LSKnode.sendRequest('transactions', { recipientId: recipient, secret: secret, secondSecret: secondSecret, amount: amount }).then(function (result) {
 				(result).should.be.type('object');
 				(result).should.be.ok;
-				done();
 			});
 		});
 	});
@@ -1054,10 +1050,9 @@ describe('Lisk.api()', function () {
 	describe('#listMultisignatureTransactions', function () {
 
 		it('should list all current not signed multisignature transactions', function (done) {
-			lisk.api().listMultisignatureTransactions(function (result) {
+			return lisk.api().listMultisignatureTransactions(function (result) {
 				(result).should.be.ok;
 				(result).should.be.type('object');
-				done();
 			});
 		});
 	});
@@ -1065,10 +1060,9 @@ describe('Lisk.api()', function () {
 	describe('#getMultisignatureTransaction', function () {
 
 		it('should get a multisignature transaction by id', function (done) {
-			lisk.api().getMultisignatureTransaction('123', function (result) {
+			return lisk.api().getMultisignatureTransaction('123', function (result) {
 				(result).should.be.ok;
 				(result).should.be.type('object');
-				done();
 			});
 		});
 	});
@@ -1081,9 +1075,8 @@ describe('Lisk.api()', function () {
 			var amount = 0.001 * Math.pow(10, 8);
 			var transaction = lisk.transaction.createTransaction('1859190791819301L', amount, 'rebuild price rigid sight blood kangaroo voice festival glow treat topic weapon');
 
-			LSKAPI.broadcastSignedTransaction(transaction, function (result) {
+			return LSKAPI.broadcastSignedTransaction(transaction, function (result) {
 				(result.success).should.be.true;
-				done();
 			});
 
 		});
