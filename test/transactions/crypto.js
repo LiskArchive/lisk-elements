@@ -8,7 +8,7 @@ describe('crypto.js', function () {
 	var crypto = lisk.crypto;
 
 	it('should be ok', function () {
-		(crypto).should.be.ok;
+		(crypto).should.be.ok();
 	});
 
 	it('should be object', function () {
@@ -16,7 +16,7 @@ describe('crypto.js', function () {
 	});
 
 	it('should has properties', function () {
-		var properties = ['getBytes', 'getHash', 'getId', 'getFee', 'sign', 'secondSign', 'getKeys', 'getAddress', 'verify', 'verifySecondSignature', 'fixedPoint'];
+		var properties = ['getBytes', 'getHash', 'getId', 'getFee', 'sign', 'secondSign', 'getKeys', 'getAddress', 'verify', 'verifySecondSignature'];
 		properties.forEach(function (property) {
 			(crypto).should.have.property(property);
 		});
@@ -28,7 +28,7 @@ describe('crypto.js', function () {
 		var bytes = null;
 
 		it('should be ok', function () {
-			(getBytes).should.be.ok;
+			(getBytes).should.be.ok();
 		});
 
 		it('should be a function', function () {
@@ -48,7 +48,7 @@ describe('crypto.js', function () {
 			};
 
 			bytes = getBytes(transaction);
-			(bytes).should.be.ok;
+			(bytes).should.be.ok();
 			(bytes).should.be.type('object');
 			(bytes.length).should.be.equal(117);
 		});
@@ -67,7 +67,7 @@ describe('crypto.js', function () {
 			};
 
 			bytes = getBytes(transaction);
-			(bytes).should.be.ok;
+			(bytes).should.be.ok();
 			(bytes).should.be.type('object');
 			(bytes.length).should.be.equal(181);
 		});
@@ -78,7 +78,7 @@ describe('crypto.js', function () {
 		var getHash = crypto.getHash;
 
 		it('should be ok', function () {
-			(getHash).should.be.ok;
+			(getHash).should.be.ok();
 		});
 
 		it('should be a function', function () {
@@ -98,7 +98,7 @@ describe('crypto.js', function () {
 			};
 
 			var result = getHash(transaction);
-			(result).should.be.ok;
+			(result).should.be.ok();
 			(result).should.be.type('object');
 			(result.length).should.be.equal(32);
 		});
@@ -109,7 +109,7 @@ describe('crypto.js', function () {
 		var getId = crypto.getId;
 
 		it('should be ok', function () {
-			(getId).should.be.ok;
+			(getId).should.be.ok();
 		});
 
 		it('should be a function', function () {
@@ -137,7 +137,7 @@ describe('crypto.js', function () {
 		var getFee = crypto.getFee;
 
 		it('should be ok', function () {
-			(getFee).should.be.ok;
+			(getFee).should.be.ok();
 		});
 
 		it('should be a function', function () {
@@ -147,7 +147,7 @@ describe('crypto.js', function () {
 		it('should return number', function () {
 			var fee = getFee({amount: 100000, type: 0});
 			(fee).should.be.type('number');
-			(fee).should.be.not.NaN;
+			(fee).should.be.not.NaN();
 		});
 
 		it('should return 10000000', function () {
@@ -171,29 +171,12 @@ describe('crypto.js', function () {
 		});
 	});
 
-	describe('fixedPoint', function () {
-
-		var fixedPoint = crypto.fixedPoint;
-
-		it('should be ok', function () {
-			(fixedPoint).should.be.ok;
-		});
-
-		it('should be number', function () {
-			(fixedPoint).should.be.type('number').and.not.NaN;
-		});
-
-		it('should be equal 100000000', function () {
-			(fixedPoint).should.be.equal(100000000);
-		});
-	});
-
 	describe('#sign', function () {
 
 		var sign = crypto.sign;
 
 		it('should be ok', function () {
-			(sign).should.be.ok;
+			(sign).should.be.ok();
 		});
 
 		it('should be a function', function () {
@@ -206,7 +189,7 @@ describe('crypto.js', function () {
 		var secondSign = crypto.secondSign;
 
 		it('should be ok', function () {
-			(secondSign).should.be.ok;
+			(secondSign).should.be.ok();
 		});
 
 		it('should be a function', function () {
@@ -219,7 +202,7 @@ describe('crypto.js', function () {
 		var getKeys = crypto.getKeys;
 
 		it('should be ok', function () {
-			(getKeys).should.be.ok;
+			(getKeys).should.be.ok();
 		});
 
 		it('should be a function', function () {
@@ -229,13 +212,13 @@ describe('crypto.js', function () {
 		it('should return two keys in hex', function () {
 			var keys = getKeys('secret');
 
-			(keys).should.be.ok;
+			(keys).should.be.ok();
 			(keys).should.be.type('object');
 			(keys).should.have.property('publicKey');
 			(keys).should.have.property('privateKey');
 			(keys.publicKey).should.be.type('string').and.match(function () {
 				try {
-					new Buffer(keys.publicKey, 'hex');
+					Buffer.from(keys.publicKey, 'hex');
 				} catch (e) {
 					return false;
 				}
@@ -244,7 +227,7 @@ describe('crypto.js', function () {
 			});
 			(keys.privateKey).should.be.type('string').and.match(function () {
 				try {
-					new Buffer(keys.privateKey, 'hex');
+					Buffer.from(keys.privateKey, 'hex');
 				} catch (e) {
 					return false;
 				}
@@ -259,7 +242,7 @@ describe('crypto.js', function () {
 		var getAddress = crypto.getAddress;
 
 		it('should be ok', function () {
-			(getAddress).should.be.ok;
+			(getAddress).should.be.ok();
 		});
 
 		it('should be a function', function () {
@@ -270,7 +253,7 @@ describe('crypto.js', function () {
 			var keys = crypto.getKeys('secret');
 			var address = getAddress(keys.publicKey);
 
-			(address).should.be.ok;
+			(address).should.be.ok();
 			(address).should.be.type('string');
 			(address).should.be.equal('18160565574430594874L');
 		});
@@ -281,7 +264,7 @@ describe('crypto.js', function () {
 		var verify = crypto.verify;
 
 		it('should be ok', function () {
-			(verify).should.be.ok;
+			(verify).should.be.ok();
 		});
 
 		it('should be function', function () {
@@ -294,7 +277,7 @@ describe('crypto.js', function () {
 		var verifySecondSignature = crypto.verifySecondSignature;
 
 		it('should be ok', function () {
-			(verifySecondSignature).should.be.ok;
+			(verifySecondSignature).should.be.ok();
 		});
 
 		it('should be function', function () {

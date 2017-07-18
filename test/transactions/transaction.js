@@ -1,4 +1,6 @@
+
 if (typeof module !== 'undefined' && module.exports) {
+	var slots = require('../../lib/time/slots');
 	var common = require('../common');
 	var lisk = common.lisk;
 }
@@ -26,7 +28,38 @@ describe('transaction.js', function () {
 
 		it('should create transaction without second signature', function () {
 			trs = createTransaction('58191285901858109L', 1000, 'secret');
-			(trs).should.be.ok;
+			(trs).should.be.ok();
+		});
+
+		it('should use time slots to get the time for the timestamp', function () {
+			var now = new Date();
+			var clock = sinon.useFakeTimers(now, 'Date');
+			var time = 36174862;
+			var stub = sinon.stub(slots, 'getTime').returns(time);
+
+			trs = createTransaction('58191285901858109L', 1000, 'secret');
+
+			(trs).should.have.property('timestamp').and.be.equal(time);
+			(stub.calledWithExactly(now.getTime())).should.be.true();
+
+			stub.restore();
+			clock.restore();
+		});
+
+		it('should use time slots with an offset to get the time for the timestamp', function () {
+			var now = new Date();
+			var clock = sinon.useFakeTimers(now, 'Date');
+			var offset = 10e3;
+			var time = 36174862;
+			var stub = sinon.stub(slots, 'getTime').returns(time);
+
+			trs = createTransaction('58191285901858109L', 1000, 'secret', null, offset);
+
+			(trs).should.have.property('timestamp').and.be.equal(time);
+			(stub.calledWithExactly(now.getTime() - offset)).should.be.true();
+
+			stub.restore();
+			clock.restore();
 		});
 
 		describe('returned transaction', function () {
@@ -44,13 +77,13 @@ describe('transaction.js', function () {
 			});
 
 			it('should have timestamp as number', function () {
-				(trs.timestamp).should.be.type('number').and.not.NaN;
+				(trs.timestamp).should.be.type('number').and.not.NaN();
 			});
 
 			it('should have senderPublicKey as hex string', function () {
 				(trs.senderPublicKey).should.be.type('string').and.match(function () {
 					try {
-						new Buffer(trs.senderPublicKey, 'hex');
+						Buffer.from(trs.senderPublicKey, 'hex');
 					} catch (e) {
 						return false;
 					}
@@ -68,7 +101,7 @@ describe('transaction.js', function () {
 			});
 
 			it('should have empty asset object', function () {
-				(trs.asset).should.be.type('object').and.empty;
+				(trs.asset).should.be.type('object').and.empty();
 			});
 
 			it('should does not have second signature', function () {
@@ -78,7 +111,7 @@ describe('transaction.js', function () {
 			it('should have signature as hex string', function () {
 				(trs.signature).should.be.type('string').and.match(function () {
 					try {
-						new Buffer(trs.signature, 'hex');
+						Buffer.from(trs.signature, 'hex');
 					} catch (e) {
 						return false;
 					}
@@ -89,15 +122,17 @@ describe('transaction.js', function () {
 
 			it('should be signed correctly', function () {
 				var result = lisk.crypto.verify(trs);
-				(result).should.be.ok;
+				(result).should.be.ok();
 			});
 
 			it('should not be signed correctly now', function () {
 				trs.amount = 10000;
 				var result = lisk.crypto.verify(trs);
-				(result).should.be.not.ok;
+				(result).should.be.not.ok();
 			});
+
 		});
+
 	});
 
 	describe('#createTransaction with second secret', function () {
@@ -113,7 +148,7 @@ describe('transaction.js', function () {
 
 		it('should create transaction without second signature', function () {
 			trs = createTransaction('58191285901858109L', 1000, 'secret', secondSecret);
-			(trs).should.be.ok;
+			(trs).should.be.ok();
 		});
 
 		describe('returned transaction', function () {
@@ -131,13 +166,13 @@ describe('transaction.js', function () {
 			});
 
 			it('should have timestamp as number', function () {
-				(trs.timestamp).should.be.type('number').and.not.NaN;
+				(trs.timestamp).should.be.type('number').and.not.NaN();
 			});
 
 			it('should have senderPublicKey as hex string', function () {
 				(trs.senderPublicKey).should.be.type('string').and.match(function () {
 					try {
-						new Buffer(trs.senderPublicKey, 'hex');
+						Buffer.from(trs.senderPublicKey, 'hex');
 					} catch (e) {
 						return false;
 					}
@@ -155,7 +190,7 @@ describe('transaction.js', function () {
 			});
 
 			it('should have empty asset object', function () {
-				(trs.asset).should.be.type('object').and.empty;
+				(trs.asset).should.be.type('object').and.empty();
 			});
 
 			it('should have second signature', function () {
@@ -165,7 +200,7 @@ describe('transaction.js', function () {
 			it('should have signature as hex string', function () {
 				(trs.signature).should.be.type('string').and.match(function () {
 					try {
-						new Buffer(trs.signature, 'hex');
+						Buffer.from(trs.signature, 'hex');
 					} catch (e) {
 						return false;
 					}
@@ -177,7 +212,7 @@ describe('transaction.js', function () {
 			it('should have signSignature as hex string', function () {
 				(trs.signSignature).should.be.type('string').and.match(function () {
 					try {
-						new Buffer(trs.signSignature, 'hex');
+						Buffer.from(trs.signSignature, 'hex');
 					} catch (e) {
 						return false;
 					}
@@ -188,25 +223,28 @@ describe('transaction.js', function () {
 
 			it('should be signed correctly', function () {
 				var result = lisk.crypto.verify(trs);
-				(result).should.be.ok;
+				(result).should.be.ok();
 			});
 
 			it('should be second signed correctly', function () {
 				var result = lisk.crypto.verifySecondSignature(trs, keys.publicKey);
-				(result).should.be.ok;
+				(result).should.be.ok();
 			});
 
 			it('should not be signed correctly now', function () {
 				trs.amount = 10000;
 				var result = lisk.crypto.verify(trs);
-				(result).should.be.not.ok;
+				(result).should.be.not.ok();
 			});
 
 			it('should not be second signed correctly now', function () {
 				trs.amount = 10000;
 				var result = lisk.crypto.verifySecondSignature(trs, keys.publicKey);
-				(result).should.be.not.ok;
+				(result).should.be.not.ok();
 			});
+
 		});
+
 	});
+
 });

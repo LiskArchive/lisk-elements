@@ -5,7 +5,10 @@
   "main": "index.js",
   "scripts": {
     "test": "nyc mocha",
-    "travis": "./node_modules/.bin/grunt travis --verbose"
+    "test:now": "nyc mocha --grep @now",
+    "cover": "istanbul cover --dir ./coverage _mocha",
+    "jenkins": "./node_modules/.bin/grunt jenkins --verbose",
+    "prepush": "grunt eslint && npm test"
   },
   "repository": {
     "type": "git",
@@ -23,8 +26,6 @@
     "popsicle": "=9.1.0"
   },
   "devDependencies": {
-    "chai": "=4.0.0",
-    "chai-http": "=3.0.0",
     "coveralls": "=2.13.1",
     "grunt": "=1.0.1",
     "grunt-browserify": "=5.0.0",
@@ -35,6 +36,7 @@
     "grunt-eslint": "=19.0.0",
     "grunt-exec": "=2.0.0",
     "grunt-force": "=1.0.0",
+    "husky": "=0.14.3",
     "istanbul": "=0.4.5",
     "load-grunt-tasks": "=3.5.2",
     "mocha": "=3.4.2",
