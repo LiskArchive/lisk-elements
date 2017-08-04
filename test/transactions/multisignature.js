@@ -9,7 +9,7 @@ describe('multisignature.js', function () {
 	var multisignature = lisk.multisignature;
 
 	it('should be ok', function () {
-		(multisignature).should.be.ok;
+		(multisignature).should.be.ok();
 	});
 
 	it('should be an Object', function () {
@@ -32,7 +32,7 @@ describe('multisignature.js', function () {
 		var createMultisig = multisignature.createMultisignature('secret', '', multiSignaturePublicKeyArray, requestLifeTime, minimumSignatures);
 
 		it('should create Multisignature account with single secret', function () {
-			(createMultisig).should.be.ok;
+			(createMultisig).should.be.ok();
 			(createMultisig).should.be.type('object');
 		});
 
@@ -41,7 +41,7 @@ describe('multisignature.js', function () {
 		});
 
 		it('should have no recipient', function () {
-			expect(createMultisig.recipientId).to.be.null;
+			should(createMultisig.recipientId).be.null();
 		});
 
 		it('should contain asset with multisignature and the inserted parameters', function () {
@@ -51,7 +51,7 @@ describe('multisignature.js', function () {
 		});
 
 		it('should not contain secondSignature', function () {
-			expect(createMultisig.signSignature).to.be.undefined;
+			should(createMultisig.signSignature).be.undefined();
 		});
 
 	});
@@ -64,7 +64,7 @@ describe('multisignature.js', function () {
 		var createMultisig2 = multisignature.createMultisignature('secret', 'secondSecret', multiSignaturePublicKeyArray2, requestLifeTime2, minimumSignatures2);
 
 		it('should create Multisignature account with two secrets', function () {
-			(createMultisig2).should.be.ok;
+			(createMultisig2).should.be.ok();
 			(createMultisig2).should.be.type('object');
 		});
 
@@ -73,7 +73,7 @@ describe('multisignature.js', function () {
 		});
 
 		it('should have no recipient', function () {
-			expect(createMultisig2.recipientId).to.be.null;
+			should(createMultisig2.recipientId).be.null();
 		});
 
 		it('should contain asset with multisignature and the inserted parameters', function () {
@@ -83,7 +83,7 @@ describe('multisignature.js', function () {
 		});
 
 		it('should contain secondSignature', function () {
-			expect(createMultisig2.signSignature).not.to.be.undefined;
+			(createMultisig2.signSignature).should.not.be.undefined();
 		});
 
 	});
@@ -154,7 +154,7 @@ describe('multisignature.js', function () {
 
 		it('should create a multisignature transaction', function () {
 
-			(msigTransaction.signatures).should.be.ok;
+			(msigTransaction.signatures).should.be.ok();
 
 		});
 
@@ -165,7 +165,7 @@ describe('multisignature.js', function () {
 
 		it('should have the signatures property as empty array', function () {
 
-			(msigTransaction.signatures).should.be.an.Array;
+			(msigTransaction.signatures).should.be.an.Array();
 
 		});
 
@@ -175,9 +175,6 @@ describe('multisignature.js', function () {
 			var pubKey = lisk.crypto.getPrivateAndPublicKeyFromSecret(secret).publicKey;
 
 			(msigTransaction2.requesterPublicKey).should.be.equal(pubKey);
-
-			console.log(msigTransaction2);
-
 		});
 
 		describe('with time offset', function () {

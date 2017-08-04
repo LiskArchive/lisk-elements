@@ -38,12 +38,12 @@ describe('dapp.js', function () {
 
 		it('should create dapp without second signature', function () {
 			trs = createDapp('secret', null, options);
-			(trs).should.be.ok;
+			(trs).should.be.ok();
 		});
 
 		it('should create delegate with second signature', function () {
 			trs = createDapp('secret', 'secret 2', options);
-			(trs).should.be.ok;
+			(trs).should.be.ok();
 		});
 
 		it('should use time slots to get the time for the timestamp', function () {
@@ -89,19 +89,19 @@ describe('dapp.js', function () {
 			});
 
 			it('should have id as string', function () {
-				(trs.id).should.be.type('string');
+				(trs).should.have.property('id').and.be.type('string');
 			});
 
 			it('should have type as number and equal 9', function () {
-				(trs.type).should.be.type('number').and.equal(5);
+				(trs).should.have.property('type').and.be.type('number').and.equal(5);
 			});
 
-			it('should have amount as number and eqaul 0', function () {
-				(trs.amount).should.be.type('number').and.equal(0);
+			it('should have amount as number and equal 0', function () {
+				(trs).should.have.property('amount').and.be.type('number').and.equal(0);
 			});
 
 			it('should have fee as number and equal 2500000000', function () {
-				(trs.fee).should.be.type('number').and.equal(2500000000);
+				(trs).should.have.property('fee').and.be.type('number').and.equal(2500000000);
 			});
 
 			it('should have null recipientId', function () {
@@ -109,29 +109,24 @@ describe('dapp.js', function () {
 			});
 
 			it('should have senderPublicKey as hex string', function () {
-				(trs.senderPublicKey).should.be.type('string').and.match(function () {
-					try {
-						new Buffer(trs.senderPublicKey, 'hex');
-					} catch (e) {
-						return false;
-					}
-
-					return true;
+				(trs).should.have.property('senderPublicKey').and.be.type('string');
+				return should.doesNotThrow(function () {
+					new Buffer(trs.senderPublicKey, 'hex');
 				});
 			});
 
 			it('should have timestamp as number', function () {
-				(trs.timestamp).should.be.type('number').and.not.NaN;
+				(trs).should.have.property('timestamp').and.be.type('number').and.not.NaN();
 			});
 
 			it('should have dapp inside asset', function () {
-				(trs.asset).should.have.property('dapp');
+				(trs).should.have.property('asset').and.have.property('dapp');
 			});
 
 			describe('dapp asset', function () {
 
 				it('should be ok', function () {
-					(trs.asset.dapp).should.be.ok;
+					(trs.asset.dapp).should.be.ok();
 				});
 
 				it('should be object', function () {
@@ -164,50 +159,40 @@ describe('dapp.js', function () {
 			});
 
 			it('should have signature as hex string', function () {
-				(trs.signature).should.be.type('string').and.match(function () {
-					try {
-						new Buffer(trs.signature, 'hex');
-					} catch (e) {
-						return false;
-					}
-
-					return true;
+				(trs).should.have.property('signature').and.be.type('string');
+				should.doesNotThrow(function () {
+					new Buffer(trs.signature, 'hex');
 				});
 			});
 
 			it('should have second signature in hex', function () {
-				(trs).should.have.property('signSignature').and.type('string').and.match(function () {
-					try {
-						new Buffer(trs.signSignature, 'hex');
-					} catch (e) {
-						return false;
-					}
-
-					return true;
+				(trs).should.have.property('signSignature').and.be.type('string');
+				should.doesNotThrow(function () {
+					new Buffer(trs.signSignature, 'hex');
 				});
 			});
 
 			it('should be signed correctly', function () {
 				var result = lisk.crypto.verify(trs);
-				(result).should.be.ok;
+				(result).should.be.ok();
 			});
 
 			it('should not be signed correctly now', function () {
 				trs.amount = 10000;
 				var result = lisk.crypto.verify(trs);
-				(result).should.be.not.ok;
+				(result).should.be.not.ok();
 			});
 
 			it('should be second signed correctly', function () {
 				trs.amount = 0;
 				var result = lisk.crypto.verifySecondSignature(trs, secondKeys.publicKey);
-				(result).should.be.ok;
+				(result).should.be.ok();
 			});
 
 			it('should not be second signed correctly now', function () {
 				trs.amount = 10000;
 				var result = lisk.crypto.verifySecondSignature(trs, secondKeys.publicKey);
-				(result).should.be.not.ok;
+				(result).should.be.not.ok();
 			});
 		});
 	});

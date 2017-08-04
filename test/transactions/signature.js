@@ -9,7 +9,7 @@ describe('signature.js', function () {
 	var signature = lisk.signature;
 
 	it('should be ok', function () {
-		(signature).should.be.ok;
+		(signature).should.be.ok();
 	});
 
 	it('should be object', function () {
@@ -31,7 +31,7 @@ describe('signature.js', function () {
 
 		it('should create signature transaction', function () {
 			sgn = createSignature('secret', 'second secret');
-			(sgn).should.be.ok;
+			(sgn).should.be.ok();
 			(sgn).should.be.type('object');
 		});
 
@@ -77,7 +77,7 @@ describe('signature.js', function () {
 
 			it('should have asset', function () {
 				(sgn.asset).should.be.type('object');
-				(sgn.asset).should.be.not.empty;
+				(sgn.asset).should.be.not.empty();
 			});
 
 			it('should have signature inside asset', function () {
@@ -87,7 +87,7 @@ describe('signature.js', function () {
 			describe('signature asset', function () {
 
 				it('should be ok', function () {
-					(sgn.asset.signature).should.be.ok;
+					(sgn.asset.signature).should.be.ok();
 				});
 
 				it('should be object', function () {
@@ -99,19 +99,14 @@ describe('signature.js', function () {
 				});
 
 				it('should have publicKey in hex', function () {
-					(sgn.asset.signature.publicKey).should.be.type('string').and.match(function () {
-						try {
-							new Buffer(sgn.asset.signature.publicKey);
-						} catch (e) {
-							return false;
-						}
-
-						return true;
+					(sgn.asset.signature).should.have.property('publicKey').and.be.type('string');
+					should.doesNotThrow(function () {
+						new Buffer(sgn.asset.signature.publicKey, 'hex');
 					});
 				});
 
 				it('should have publicKey in 32 bytes', function () {
-					var publicKey = new Buffer(sgn.asset.signature.publicKey, 'hex');
+					var publicKey = Buffer.from(sgn.asset.signature.publicKey, 'hex');
 					(publicKey.length).should.be.equal(32);
 				});
 

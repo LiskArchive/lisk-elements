@@ -10,7 +10,7 @@ describe('delegate.js', function () {
 	var delegate = lisk.delegate;
 
 	it('should be ok', function () {
-		(delegate).should.be.ok;
+		(delegate).should.be.ok();
 	});
 
 	it('should be function', function () {
@@ -27,7 +27,7 @@ describe('delegate.js', function () {
 		var trs = null;
 
 		it('should be ok', function () {
-			(createDelegate).should.be.ok;
+			(createDelegate).should.be.ok();
 		});
 
 		it('should be function', function () {
@@ -78,7 +78,7 @@ describe('delegate.js', function () {
 			});
 
 			it('should be ok', function () {
-				(trs).should.be.ok;
+				(trs).should.be.ok();
 			});
 
 			it('should be object', function () {
@@ -86,7 +86,7 @@ describe('delegate.js', function () {
 			});
 
 			it('should have recipientId equal null', function () {
-				(trs).should.have.property('recipientId').and.type('object').and.be.empty;
+				(trs).should.have.property('recipientId').and.be.null();
 			});
 
 			it('shoud have amount equal 0', function () {
@@ -102,38 +102,23 @@ describe('delegate.js', function () {
 			});
 
 			it('should have senderPublicKey in hex', function () {
-				(trs).should.have.property('senderPublicKey').and.type('string').and.match(function () {
-					try {
-						new Buffer(trs.senderPublicKey, 'hex');
-					} catch (e) {
-						return false;
-					}
-
-					return true;
-				}).and.equal(keys.publicKey);
+				(trs).should.have.property('senderPublicKey').and.type('string').and.equal(keys.publicKey);
+				should.doesNotThrow(function () {
+					new Buffer(trs.senderPublicKey, 'hex');
+				});
 			});
 
 			it('should have signature in hex', function () {
-				(trs).should.have.property('signature').and.type('string').and.match(function () {
-					try {
-						new Buffer(trs.signature, 'hex');
-					} catch (e) {
-						return false;
-					}
-
-					return true;
+				(trs).should.have.property('signature').and.be.type('string');
+				should.doesNotThrow(function () {
+					new Buffer(trs.signature, 'hex');
 				});
 			});
 
 			it('should have second signature in hex', function () {
-				(trs).should.have.property('signSignature').and.type('string').and.match(function () {
-					try {
-						new Buffer(trs.signSignature, 'hex');
-					} catch (e) {
-						return false;
-					}
-
-					return true;
+				(trs).should.have.property('signSignature').and.type('string');
+				should.doesNotThrow(function () {
+					new Buffer(trs.signSignature, 'hex');
 				});
 			});
 
@@ -144,30 +129,30 @@ describe('delegate.js', function () {
 
 			it('should be signed correctly', function () {
 				var result = lisk.crypto.verify(trs, keys.publicKey);
-				(result).should.be.ok;
+				(result).should.be.ok();
 			});
 
 			it('should be second signed correctly', function () {
 				var result = lisk.crypto.verifySecondSignature(trs, secondKeys.publicKey);
-				(result).should.be.ok;
+				(result).should.be.ok();
 			});
 
 			it('should not be signed correctly now', function () {
 				trs.amount = 100;
 				var result = lisk.crypto.verify(trs, keys.publicKey);
-				(result).should.be.not.ok;
+				(result).should.be.not.ok();
 			});
 
 			it('should not be second signed correctly now', function () {
 				trs.amount = 100;
 				var result = lisk.crypto.verify(trs, secondKeys.publicKey);
-				(result).should.be.not.ok;
+				(result).should.be.not.ok();
 			});
 
 			describe('delegate asset', function () {
 
 				it('should be ok', function () {
-					(trs.asset.delegate).should.be.ok;
+					(trs.asset.delegate).should.be.ok();
 				});
 
 				it('should be object', function () {

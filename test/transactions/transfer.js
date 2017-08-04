@@ -7,7 +7,7 @@ describe('transfer.js', function () {
 	var transfer = lisk.transfer;
 
 	it('should be ok', function () {
-		(transfer).should.be.ok;
+		(transfer).should.be.ok();
 	});
 
 	it('should be object', function () {

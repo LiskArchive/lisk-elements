@@ -1,6 +1,8 @@
 if (typeof module !== 'undefined' && module.exports) {
 	var common = require('../common');
 	var lisk = common.lisk;
+	var privateApi = common.privateApi;
+	var utils = common.utils;
 	var sinon = common.sinon;
 	process.env.NODE_ENV = 'test';
 }
@@ -30,8 +32,8 @@ describe('Lisk.api()', function () {
 
 	describe('#listPeers', function () {
 		it('should give a set of the peers', function () {
-			(LSK.listPeers()).should.be.ok;
-			(LSK.listPeers()).should.be.type.Object;
+			(LSK.listPeers()).should.be.ok();
+			(LSK.listPeers()).should.be.type('object');
 			(LSK.listPeers().official.length).should.be.equal(8);
 			(LSK.listPeers().testnet.length).should.be.equal(1);
 		});
@@ -40,7 +42,7 @@ describe('Lisk.api()', function () {
 	describe('.currentPeer', function () {
 
 		it('currentPeer should be set by default', function () {
-			(LSK.currentPeer).should.be.ok;
+			(LSK.currentPeer).should.be.ok();
 		});
 	});
 
@@ -98,14 +100,14 @@ describe('Lisk.api()', function () {
 			var LISK = lisk.api();
 			LISK.setTestnet(true);
 
-			(LISK.testnet).should.be.true;
+			(LISK.testnet).should.be.true();
 		});
 
 		it('should set to mainnet', function () {
 			var LISK = lisk.api();
 			LISK.setTestnet(false);
 
-			(LISK.testnet).should.be.false;
+			(LISK.testnet).should.be.false();
 		});
 	});
 
@@ -130,14 +132,14 @@ describe('Lisk.api()', function () {
 		it('should return the node from initial settings when set', function () {
 			var LiskUrlInit = lisk.api({ port: 7000, node: 'localhost', ssl: true, randomPeer: false });
 
-			(LiskUrlInit.selectNode()).should.be.equal('localhost');
+			(privateApi.selectNode.call(LiskUrlInit)).should.be.equal('localhost');
 		});
 	});
 
 	describe('#getRandomPeer', function () {
-
+		var LiskUrlInit = lisk.api({ port: 7000, node: 'localhost', ssl: true, randomPeer: false });
 		it('should give a random peer', function () {
-			(LSK.getRandomPeer()).should.be.ok();
+			(privateApi.getRandomPeer.call(LiskUrlInit)).should.be.ok();
 		});
 	});
 
@@ -145,7 +147,7 @@ describe('Lisk.api()', function () {
 
 		it('should add current node to LSK.bannedPeers', function () {
 			var currentNode = LSK.currentPeer;
-			LSK.banNode();
+			privateApi.banNode.call(LSK);
 
 			(LSK.bannedPeers).should.containEql(currentNode);
 		});
@@ -157,14 +159,14 @@ describe('Lisk.api()', function () {
 			var LiskUrlInit = lisk.api({ port: 7000, node: 'localhost', ssl: false });
 			var fullUrl = 'http://localhost:7000';
 
-			(LiskUrlInit.getFullUrl()).should.be.equal(fullUrl);
+			(privateApi.getFullUrl.call(LiskUrlInit)).should.be.equal(fullUrl);
 		});
 
 		it('should give the full url without port and with SSL', function () {
 			var LiskUrlInit = lisk.api({ port: '', node: 'localhost', ssl: true });
 			var fullUrl = 'https://localhost';
 
-			(LiskUrlInit.getFullUrl()).should.be.equal(fullUrl);
+			(privateApi.getFullUrl.call(LiskUrlInit)).should.be.equal(fullUrl);
 		});
 	});
 
@@ -173,13 +175,13 @@ describe('Lisk.api()', function () {
 		it('should be http when ssl is false', function () {
 			LSK.setSSL(false);
 
-			(LSK.getURLPrefix()).should.be.equal('http');
+			(privateApi.getURLPrefix.call(LSK)).should.be.equal('http');
 		});
 
 		it('should be https when ssl is true', function () {
 			LSK.setSSL(true);
 
-			(LSK.getURLPrefix()).should.be.equal('https');
+			(privateApi.getURLPrefix.call(LSK)).should.be.equal('https');
 		});
 	});
 
@@ -198,7 +200,7 @@ describe('Lisk.api()', function () {
 		});
 
 		it('should be equal after trim an Object in keys and value', function () {
-			var trimIt = LSK.trimObj(untrimmedObj);
+			var trimIt = utils.trimObj(untrimmedObj);
 
 			(trimIt).should.be.eql(trimmedObj);
 		});
@@ -208,10 +210,45 @@ describe('Lisk.api()', function () {
 				'myObj': 2
 			};
 
-			var trimmedObj = LSK.trimObj(obj);
-			(trimmedObj).should.be.ok;
+			var trimmedObj = utils.trimObj(obj);
+			(trimmedObj).should.be.ok();
 			(trimmedObj).should.be.eql({ myObj: '2' });
 		});
+	});
+
+	describe('#extend', function() {
+
+		var defaultOptions = {
+			testnet: false,
+			ssl: false,
+			randomPeer: true,
+			node: null,
+			port: null,
+			nethash: null,
+			bannedPeers: []
+		};
+
+		var options = {
+			ssl: true,
+			port: 7000,
+			testnet: true,
+		};
+
+		it('should extend obj1 by obj2 and not modify original obj1', function() {
+			var result = utils.extend(defaultOptions, options);
+
+			(result).should.be.eql({
+				testnet: true,
+				ssl: true,
+				randomPeer: true,
+				node: null,
+				port: 7000,
+				nethash: null,
+				bannedPeers: []
+			});
+			(result).should.be.not.eql(defaultOptions);
+		});
+
 	});
 
 	describe('#toQueryString', function () {
@@ -222,7 +259,7 @@ describe('Lisk.api()', function () {
 				key: 'my2ndval'
 			};
 
-			var serialised = LSK.toQueryString(myObj);
+			var serialised = utils.toQueryString(myObj);
 
 			(serialised).should.be.equal('obj=myval&key=my2ndval');
 		});
@@ -236,7 +273,7 @@ describe('Lisk.api()', function () {
 				key: 'my2ndval '
 			};
 
-			var serialised = LSK.serialiseHttpData(myObj);
+			var serialised = privateApi.serialiseHttpData(myObj);
 
 			(serialised).should.be.equal('?obj=myval&key=my2ndval');
 		});
@@ -259,114 +296,108 @@ describe('Lisk.api()', function () {
 		it('should identify GET requests', function () {
 			var requestType = 'api/loader/status';
 			var options = '';
-			var checkRequestAnswer = LSK.checkRequest(requestType, options);
+			var checkRequestAnswer = privateApi.checkRequest.call(LSK, requestType, options);
 
-			(checkRequestAnswer).should.be.ok;
+			(checkRequestAnswer).should.be.ok();
 			(checkRequestAnswer).should.be.equal('GET');
 
 			var requestType = 'api/loader/status/sync';
 			var options = '';
-			var checkRequestAnswer = LSK.checkRequest(requestType, options);
+			var checkRequestAnswer = privateApi.checkRequest.call(LSK, requestType, options);
 
-			(checkRequestAnswer).should.be.ok;
+			(checkRequestAnswer).should.be.ok();
 			(checkRequestAnswer).should.be.equal('GET');
 
 			var requestType = 'api/loader/status/ping';
 			var options = '';
-			var checkRequestAnswer = LSK.checkRequest(requestType, options);
+			var checkRequestAnswer = privateApi.checkRequest.call(LSK, requestType, options);
 
-			(checkRequestAnswer).should.be.ok;
+			(checkRequestAnswer).should.be.ok();
 			(checkRequestAnswer).should.be.equal('GET');
 
 			var requestType = 'api/transactions';
 			var options = {blockId: '123', senderId: '123'};
-			var checkRequestAnswer = LSK.checkRequest(requestType, options);
+			var checkRequestAnswer = privateApi.checkRequest.call(LSK, requestType, options);
 
-			(checkRequestAnswer).should.be.ok;
+			(checkRequestAnswer).should.be.ok();
 			(checkRequestAnswer).should.be.equal('GET');
 		});
 
 		it('should identify POST requests', function () {
 			var requestType = 'accounts/generatePublicKey';
 			var options = {secret: '123'};
-			var checkRequestAnswer = LSK.checkRequest(requestType, options);
+			var checkRequestAnswer = privateApi.checkRequest.call(LSK, requestType, options);
 
-			(checkRequestAnswer).should.be.ok;
+			(checkRequestAnswer).should.be.ok();
 			(checkRequestAnswer).should.be.equal('POST');
 
 			var requestType = 'accounts/open';
 			var options = {secret: '123'};
-			var checkRequestAnswer = LSK.checkRequest(requestType, options);
+			var checkRequestAnswer = privateApi.checkRequest.call(LSK, requestType, options);
 
-			(checkRequestAnswer).should.be.ok;
+			(checkRequestAnswer).should.be.ok();
 			(checkRequestAnswer).should.be.equal('POST');
 
 			var requestType = 'multisignatures/sign';
 			var options = {secret: '123'};
-			var checkRequestAnswer = LSK.checkRequest(requestType, options);
+			var checkRequestAnswer = privateApi.checkRequest.call(LSK, requestType, options);
 
-			(checkRequestAnswer).should.be.ok;
+			(checkRequestAnswer).should.be.ok();
 			(checkRequestAnswer).should.be.equal('POST');
 		});
 
 		it('should identify PUT requests', function () {
 			var requestType = 'accounts/delegates';
 			var options = {secret: '123'};
-			var checkRequestAnswer = LSK.checkRequest(requestType, options);
+			var checkRequestAnswer = privateApi.checkRequest.call(LSK, requestType, options);
 
-			(checkRequestAnswer).should.be.ok;
+			(checkRequestAnswer).should.be.ok();
 			(checkRequestAnswer).should.be.equal('PUT');
 
 			var requestType = 'signatures';
 			var options = {secret: '123'};
-			var checkRequestAnswer = LSK.checkRequest(requestType, options);
+			var checkRequestAnswer = privateApi.checkRequest.call(LSK, requestType, options);
 
-			(checkRequestAnswer).should.be.ok;
+			(checkRequestAnswer).should.be.ok();
 			(checkRequestAnswer).should.be.equal('PUT');
 
 			var requestType = 'transactions';
 			var options = {secret: '123'};
-			var checkRequestAnswer = LSK.checkRequest(requestType, options);
+			var checkRequestAnswer = privateApi.checkRequest.call(LSK, requestType, options);
 
-			(checkRequestAnswer).should.be.ok;
+			(checkRequestAnswer).should.be.ok();
 			(checkRequestAnswer).should.be.equal('PUT');
 		});
 
 		it('should identify NOACTION requests', function () {
 			var requestType = 'delegates/forging/enable';
 			var options = {secret: '123'};
-			var checkRequestAnswer = LSK.checkRequest(requestType, options);
+			var checkRequestAnswer = privateApi.checkRequest.call(LSK, requestType, options);
 
-			(checkRequestAnswer).should.be.ok;
+			(checkRequestAnswer).should.be.ok();
 			(checkRequestAnswer).should.be.equal('NOACTION');
 
 			var requestType = 'dapps/uninstall';
 			var options = {secret: '123'};
-			var checkRequestAnswer = LSK.checkRequest(requestType, options);
+			var checkRequestAnswer = privateApi.checkRequest.call(LSK, requestType, options);
 
-			(checkRequestAnswer).should.be.ok;
+			(checkRequestAnswer).should.be.ok();
 			(checkRequestAnswer).should.be.equal('NOACTION');
 		});
 	});
 
 	describe('#checkOptions', function () {
 
-		it('should not accept falsy options like undefined', function (done) {
-			try {
+		it('should not accept falsy options like undefined', function () {
+			(function() {
 				lisk.api().sendRequest('delegates/', {limit:undefined}, function () {});
-			} catch (e) {
-				(e.message).should.be.equal('parameter value "limit" should not be undefined');
-				done();
-			}
+			}).should.throw('parameter value "limit" should not be undefined');
 		});
 
-		it('should not accept falsy options like NaN', function (done) {
-			try {
+		it('should not accept falsy options like NaN', function () {
+			(function() {
 				lisk.api().sendRequest('delegates/', {limit:NaN}, function () {});
-			} catch (e) {
-				(e.message).should.be.equal('parameter value "limit" should not be NaN');
-				done();
-			}
+			}).should.throw('parameter value "limit" should not be NaN');
 		});
 
 	});
@@ -376,7 +407,8 @@ describe('Lisk.api()', function () {
 		it('should give the correct parameters for GET requests', function () {
 			var requestType = 'transactions';
 			var options = {blockId: '123', senderId: '123'};
-			var checkRequestAnswer = lisk.api({ node: 'localhost' }).changeRequest(requestType, options);
+			var LSK = lisk.api({ node: 'localhost' });
+			var checkRequestAnswer = privateApi.changeRequest.call(LSK, requestType, options);
 
 			var output = {
 				nethash: '',
@@ -388,14 +420,15 @@ describe('Lisk.api()', function () {
 				requestUrl: 'http://localhost:8000/api/transactions?blockId=123&senderId=123'
 			};
 
-			(checkRequestAnswer).should.be.ok;
+			(checkRequestAnswer).should.be.ok();
 			(checkRequestAnswer).should.be.eql(output);
 		});
 
 		it('should give the correct parameters for GET requests with parameters', function () {
 			var requestType = 'delegates/search/';
 			var options = {q: 'oliver'};
-			var checkRequestAnswer = lisk.api({ node: 'localhost' }).changeRequest(requestType, options);
+			var LSK = lisk.api({ node: 'localhost' });
+			var checkRequestAnswer = privateApi.changeRequest.call(LSK, requestType, options);
 
 			var output = {
 				nethash: '',
@@ -406,14 +439,15 @@ describe('Lisk.api()', function () {
 				requestUrl: 'http://localhost:8000/api/delegates/search/?q=oliver'
 			};
 
-			(checkRequestAnswer).should.be.ok;
+			(checkRequestAnswer).should.be.ok();
 			(checkRequestAnswer).should.be.eql(output);
 		});
 
 		it('should give the correct parameters for NOACTION requests', function () {
 			var requestType = 'delegates/forging/enable';
 			var options = {secret: '123'};
-			var checkRequestAnswer = lisk.api({ node: 'localhost' }).changeRequest(requestType, options);
+			var LSK = lisk.api({ node: 'localhost' });
+			var checkRequestAnswer = privateApi.changeRequest.call(LSK, requestType, options);
 
 			var output = {
 				nethash: '',
@@ -422,14 +456,15 @@ describe('Lisk.api()', function () {
 				requestUrl: ''
 			};
 
-			(checkRequestAnswer).should.be.ok;
+			(checkRequestAnswer).should.be.ok();
 			(checkRequestAnswer).should.be.eql(output);
 		});
 
 		it('should give the correct parameters for POST requests', function () {
 			var requestType = 'accounts/open';
 			var options = {secret: '123'};
-			var checkRequestAnswer = lisk.api({ node: 'localhost' }).changeRequest(requestType, options);
+			var LSK = lisk.api({ node: 'localhost' });
+			var checkRequestAnswer = privateApi.changeRequest.call(LSK, requestType, options);
 
 			var output = {
 				nethash: '',
@@ -438,16 +473,17 @@ describe('Lisk.api()', function () {
 				requestUrl: 'http://localhost:8000/api/accounts?address=12475940823804898745L'
 			};
 
-			(checkRequestAnswer).should.be.ok;
+			(checkRequestAnswer).should.be.ok();
 			(checkRequestAnswer).should.be.eql(output);
 		});
 
 		it('should give the correct parameters for PUT requests', function () {
 			var requestType = 'signatures';
 			var options = {secret: '123', secondSecret: '1234'};
-			var checkRequestAnswer = lisk.api({ node: 'localhost' }).changeRequest(requestType, options);
+			var LSK = lisk.api({ node: 'localhost' });
+			var checkRequestAnswer = privateApi.changeRequest.call(LSK, requestType, options);
 
-			(checkRequestAnswer).should.be.ok;
+			(checkRequestAnswer).should.be.ok();
 			(checkRequestAnswer.requestParams.transaction).should.have.property('id').which.is.a.String();
 			(checkRequestAnswer.requestParams.transaction).should.have.property('amount').which.is.a.Number();
 			(checkRequestAnswer.requestParams).should.have.property('transaction').which.is.a.Object();
@@ -460,7 +496,7 @@ describe('Lisk.api()', function () {
 			var expectedResponse = {
 				body: { success: true, height: 2850466 },
 			};
-			var stub = sinon.stub(LSK, 'sendRequestPromise').resolves(expectedResponse);
+			var stub = sinon.stub(privateApi, 'sendRequestPromise').resolves(expectedResponse);
 			return LSK.sendRequest('blocks/getHeight', function (data) {
 				(data).should.be.ok();
 				(data).should.be.type('object');
@@ -857,6 +893,23 @@ describe('Lisk.api()', function () {
 		});
 	});
 
+	describe('#generateAccount', function () {
+		var expectedRessult= {
+			privateKey:
+				'7683ba873c5e5aa6c12df564a60a93a519e2a5682cf5358a6a5b9ccc70607e96d803281f421e35ca585682829119c270a094fa9a1da2edc3dd65a3dc0dc46497',
+			publicKey: 'd803281f421e35ca585682829119c270a094fa9a1da2edc3dd65a3dc0dc46497'
+		};
+
+		it('should get publicKey', function () {
+			var callback = sinon.spy();
+			var secret = 'dream capable public heart sauce pilot ordinary fever final brand flock boring';
+
+			LSK.generateAccount(secret, callback);
+			(callback.called).should.be.true();
+			(callback.calledWith(expectedRessult)).should.be.true();
+		});
+	});
+
 	describe('#sendLSK', function () {
 		var expectedResponse = {
 			body: { success: true, transactionId: '8921031602435581844' }
@@ -896,13 +949,13 @@ describe('Lisk.api()', function () {
 	describe('#checkReDial', function () {
 
 		it('should check if all the peers are already banned', function () {
-			(lisk.api().checkReDial()).should.be.equal(true);
+			var LSK = lisk.api();
+			(privateApi.checkReDial.call(LSK)).should.be.equal(true);
 		});
 
-		it('should be able to get a new node when current one is not reachable', function (done) {
-			lisk.api({ node: '123', randomPeer: true }).sendRequest('blocks/getHeight', {}, function (result) {
+		it('should be able to get a new node when current one is not reachable', function () {
+			return lisk.api({ node: '123', randomPeer: true }).sendRequest('blocks/getHeight', {}, function (result) {
 				(result).should.be.type('object');
-				done();
 			});
 		});
 
@@ -910,98 +963,93 @@ describe('Lisk.api()', function () {
 			var thisLSK = lisk.api();
 			thisLSK.bannedPeers = lisk.api().defaultPeers;
 
-			(thisLSK.checkReDial()).should.be.equal(false);
+			(privateApi.checkReDial.call(thisLSK)).should.be.equal(false);
 		});
 
 		it('should recognize that now all the peers are banned for testnet', function () {
 			var thisLSK = lisk.api({ testnet: true });
 			thisLSK.bannedPeers = lisk.api().defaultTestnetPeers;
 
-			(thisLSK.checkReDial()).should.be.equal(false);
+			(privateApi.checkReDial.call(thisLSK)).should.be.equal(false);
 		});
 
 		it('should recognize that now all the peers are banned for ssl', function () {
 			var thisLSK = lisk.api({ssl: true});
 			thisLSK.bannedPeers = lisk.api().defaultSSLPeers;
 
-			(thisLSK.checkReDial()).should.be.equal(false);
+			(privateApi.checkReDial.call(thisLSK)).should.be.equal(false);
 		});
 
-		it('should stop redial when all the peers are banned already', function (done) {
+		it('should stop redial when all the peers are banned already', function () {
 			var thisLSK = lisk.api();
 			thisLSK.bannedPeers = lisk.api().defaultPeers;
 			thisLSK.currentPeer = '';
 
-			thisLSK.sendRequest('blocks/getHeight').then(function (e) {
+			return thisLSK.sendRequest('blocks/getHeight').then(function (e) {
 				(e.message).should.be.equal('could not create http request to any of the given peers');
-				done();
 			});
 		});
 
-		it('should redial to new node when randomPeer is set true', function (done) {
+		it('should redial to new node when randomPeer is set true', function () {
 			var thisLSK = lisk.api({ randomPeer: true, node: '123' });
 
-			thisLSK.getAccount('12731041415715717263L', function (data) {
-				(data).should.be.ok;
+			return thisLSK.getAccount('12731041415715717263L', function (data) {
+				(data).should.be.ok();
 				(data.success).should.be.equal(true);
-				done();
 			});
 		});
 
 		it('should not redial to new node when randomPeer is set to true but unknown nethash provided', function () {
 			var thisLSK = lisk.api({ randomPeer: true, node: '123', nethash: '123' });
 
-			(thisLSK.checkReDial()).should.be.equal(false);
+			(privateApi.checkReDial.call(thisLSK)).should.be.equal(false);
 		});
 
 		it('should redial to mainnet nodes when nethash is set and randomPeer is true', function () {
 			var thisLSK = lisk.api({ randomPeer: true, node: '123', nethash: 'ed14889723f24ecc54871d058d98ce91ff2f973192075c0155ba2b7b70ad2511' });
 
-			(thisLSK.checkReDial()).should.be.equal(true);
+			(privateApi.checkReDial.call(thisLSK)).should.be.equal(true);
 			(thisLSK.testnet).should.be.equal(false);
 		});
 
 		it('should redial to testnet nodes when nethash is set and randomPeer is true', function () {
 			var thisLSK = lisk.api({ randomPeer: true, node: '123', nethash: 'da3ed6a45429278bac2666961289ca17ad86595d33b31037615d4b8e8f158bba' });
 
-			(thisLSK.checkReDial()).should.be.equal(true);
+			(privateApi.checkReDial.call(thisLSK)).should.be.equal(true);
 			(thisLSK.testnet).should.be.equal(true);
 		});
 
 		it('should not redial when randomPeer is set false', function () {
 			var thisLSK = lisk.api({ randomPeer: false});
 
-			(thisLSK.checkReDial()).should.be.equal(false);
+			(privateApi.checkReDial.call(thisLSK)).should.be.equal(false);
 		});
 	});
 
 	describe('#sendRequest with promise', function () {
 
-		it('should be able to use sendRequest as a promise for GET', function (done) {
-			lisk.api().sendRequest('blocks/getHeight', {}).then(function (result) {
+		it('should be able to use sendRequest as a promise for GET', function () {
+			return lisk.api().sendRequest('blocks/getHeight', {}).then(function (result) {
 				(result).should.be.type('object');
 				(result.success).should.be.equal(true);
 				(result.height).should.be.type('number');
-				done();
 			});
 		});
 
-		it('should route the request accordingly when request method is POST but GET can be used', function (done) {
-			lisk.api().sendRequest('accounts/open', { secret: '123' }).then(function (result) {
+		it('should route the request accordingly when request method is POST but GET can be used', function () {
+			return lisk.api().sendRequest('accounts/open', { secret: '123' }).then(function (result) {
 				(result).should.be.type('object');
-				(result.account).should.be.ok;
-				done();
+				(result.account).should.be.ok();
 			});
 		});
 
-		it('should respond with error when API call is disabled', function (done) {
-			lisk.api().sendRequest('delegates/forging/enable', { secret: '123' }).then(function (result) {
+		it('should respond with error when API call is disabled', function () {
+			return lisk.api().sendRequest('delegates/forging/enable', { secret: '123' }).then(function (result) {
 				(result.error).should.be.equal('Forging not available via offlineRequest');
-				done();
 			});
 		});
 
-		it('should be able to use sendRequest as a promise for POST', function (done) {
+		it('should be able to use sendRequest as a promise for POST', function () {
 			var options = {
 				ssl: false,
 				node: '',
@@ -1017,10 +1065,9 @@ describe('Lisk.api()', function () {
 			var recipient = '10279923186189318946L';
 			var amount = 100000000;
 
-			LSKnode.sendRequest('transactions', { recipientId: recipient, secret: secret, secondSecret: secondSecret, amount: amount }).then(function (result) {
+			return LSKnode.sendRequest('transactions', { recipientId: recipient, secret: secret, secondSecret: secondSecret, amount: amount }).then(function (result) {
 				(result).should.be.type('object');
-				(result).should.be.ok;
-				done();
+				(result).should.be.ok();
 			});
 		});
 
@@ -1030,7 +1077,7 @@ describe('Lisk.api()', function () {
 			var futureTimestampResponse = {
 				body: { success: false, message: 'Invalid transaction timestamp. Timestamp is in the future' }
 			};
-			var stub = sinon.stub(thisLSK, 'sendRequestPromise');
+			var stub = sinon.stub(privateApi, 'sendRequestPromise');
 			var spy = sinon.spy(thisLSK, 'sendRequest');
 			stub.resolves(futureTimestampResponse);
 			stub.onThirdCall().resolves(successResponse);
@@ -1050,7 +1097,7 @@ describe('Lisk.api()', function () {
 			var futureTimestampResponse = {
 				body: { success: false, message: 'Invalid transaction timestamp. Timestamp is in the future' }
 			};
-			var stub = sinon.stub(thisLSK, 'sendRequestPromise');
+			var stub = sinon.stub(privateApi, 'sendRequestPromise');
 			var spy = sinon.spy(thisLSK, 'sendRequest');
 			stub.resolves(futureTimestampResponse);
 
@@ -1066,23 +1113,38 @@ describe('Lisk.api()', function () {
 
 	describe('#listMultisignatureTransactions', function () {
 
-		it('should list all current not signed multisignature transactions', function (done) {
-			lisk.api().listMultisignatureTransactions(function (result) {
-				(result).should.be.ok;
+		it('should list all current not signed multisignature transactions', function () {
+			return lisk.api().listMultisignatureTransactions(function (result) {
+				(result).should.be.ok();
 				(result).should.be.type('object');
-				done();
 			});
 		});
 	});
 
 	describe('#getMultisignatureTransaction', function () {
 
-		it('should get a multisignature transaction by id', function (done) {
-			lisk.api().getMultisignatureTransaction('123', function (result) {
-				(result).should.be.ok;
+		it('should get a multisignature transaction by id', function () {
+			return lisk.api().getMultisignatureTransaction('123', function (result) {
+				(result).should.be.ok();
 				(result).should.be.type('object');
-				done();
 			});
 		});
 	});
+
+	describe('#broadcastSignedTransaction', function () {
+
+		it('should be able to broadcast a finished and signed transaction', function () {
+
+			var LSKAPI = lisk.api({testnet: true});
+			var amount = 0.001 * Math.pow(10, 8);
+			var transaction = lisk.transaction.createTransaction('1859190791819301L', amount, 'rebuild price rigid sight blood kangaroo voice festival glow treat topic weapon');
+
+			return LSKAPI.broadcastSignedTransaction(transaction, function (result) {
+				(result.success).should.be.true();
+			});
+
+		});
+
+	});
+
 });

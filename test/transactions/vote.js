@@ -9,7 +9,7 @@ describe('vote.js', function () {
 	var vote = lisk.vote;
 
 	it('should be ok', function () {
-		(vote).should.be.ok;
+		(vote).should.be.ok();
 	});
 
 	it('should be object', function () {
@@ -28,7 +28,7 @@ describe('vote.js', function () {
 		    publicKeys = ['+' + publicKey];
 
 		it('should be ok', function () {
-			(createVote).should.be.ok;
+			(createVote).should.be.ok();
 		});
 
 		it('should be function', function () {
@@ -77,7 +77,7 @@ describe('vote.js', function () {
 			});
 
 			it('should be ok', function () {
-				(vt).should.be.ok;
+				(vt).should.be.ok();
 			});
 
 			it('should be object', function () {
@@ -101,71 +101,56 @@ describe('vote.js', function () {
 			});
 
 			it('should have senderPublicKey hex string equal to sender public key', function () {
-				(vt).should.have.property('senderPublicKey').and.be.type('string').and.match(function () {
-					try {
-						new Buffer(vt.senderPublicKey, 'hex');
-					} catch (e) {
-						return false;
-					}
-
-					return true;
-				}).and.equal(publicKey);
+				(vt).should.have.property('senderPublicKey').and.be.type('string').and.equal(publicKey);
+				should.doesNotThrow(function () {
+					new Buffer(vt.senderPublicKey, 'hex');
+				});
 			});
 
 			it('should have signature hex string', function () {
-				(vt).should.have.property('signature').and.be.type('string').and.match(function () {
-					try {
-						new Buffer(vt.signature, 'hex');
-					} catch (e) {
-						return false;
-					}
-
-					return true;
+				(vt).should.have.property('signature').and.be.type('string');
+				should.doesNotThrow(function () {
+					new Buffer(vt.signature, 'hex');
 				});
 			});
 
 			it('should have second signature hex string', function () {
-				(vt).should.have.property('signSignature').and.be.type('string').and.match(function () {
-					try {
-						new Buffer(vt.signSignature, 'hex');
-					} catch (e) {
-						return false;
-					}
-
-					return true;
+				(vt).should.have.property('signSignature').and.be.type('string');
+				should.doesNotThrow(function () {
+					new Buffer(vt.signSignature, 'hex');
 				});
 			});
 
 			it('should be signed correctly', function () {
 				var result = lisk.crypto.verify(vt);
-				(result).should.be.ok;
+				(result).should.be.ok();
 			});
 
 			it('should be second signed correctly', function () {
 				var result = lisk.crypto.verifySecondSignature(vt, lisk.crypto.getKeys('second secret').publicKey);
-				(result).should.be.ok;
+				(result).should.be.ok();
 			});
 
 			it('should not be signed correctly now', function () {
 				vt.amount = 100;
 				var result = lisk.crypto.verify(vt);
-				(result).should.be.not.ok;
+				(result).should.be.not.ok();
 			});
 
 			it('should not be second signed correctly now', function () {
 				vt.amount = 100;
 				var result = lisk.crypto.verifySecondSignature(vt, lisk.crypto.getKeys('second secret').publicKey);
-				(result).should.be.not.ok;
+				(result).should.be.not.ok();
 			});
 
 			it('should have asset', function () {
-				(vt).should.have.property('asset').and.not.empty;
+				(vt).should.have.property('asset').and.not.be.empty();
 			});
 
 			describe('vote asset', function () {
 
 				it('should be ok', function () {
-					(vt.asset).should.have.property('votes').and.be.ok;
+					(vt.asset).should.have.property('votes').and.be.ok();
 				});
 
 				it('should be object', function () {
@@ -173,7 +158,7 @@ describe('vote.js', function () {
 				});
 
 				it('should be not empty', function () {
-					(vt.asset.votes).should.be.not.empty;
+					(vt.asset.votes).should.be.not.empty();
 				});
 
 				it('should contains one element', function () {
@@ -182,14 +167,9 @@ describe('vote.js', function () {
 
 				it('should have public keys in hex', function () {
 					vt.asset.votes.forEach(function (v) {
-						(v).should.be.type('string').startWith('+').and.match(function () {
-							try {
-								new Buffer(v.substring(1, v.length), 'hex');
-							} catch (e) {
-								return false;
-							}
-
-							return true;
+						(v).should.be.type('string').startWith('+');
+						should.doesNotThrow(function () {
+							new Buffer(v.substring(1, v.length), 'hex');
 						});
 					});
 				});

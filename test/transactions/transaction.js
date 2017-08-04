@@ -28,7 +28,7 @@ describe('transaction.js', function () {
 
 		it('should create transaction without second signature', function () {
 			trs = createTransaction('58191285901858109L', 1000, 'secret');
-			(trs).should.be.ok;
+			(trs).should.be.ok();
 		});
 
 		it('should use time slots to get the time for the timestamp', function () {
@@ -53,7 +53,7 @@ describe('transaction.js', function () {
 			var time = 36174862;
 			var stub = sinon.stub(slots, 'getTime').returns(time);
 
-			trs = createTransaction('58191285901858109L', 1000, 'secret', null, offset);
+			trs = createTransaction('58191285901858109L', 1000, 'secret', null, null, offset);
 
 			(trs).should.have.property('timestamp').and.be.equal(time);
 			(stub.calledWithExactly(now.getTime() - offset)).should.be.true();
@@ -69,39 +69,34 @@ describe('transaction.js', function () {
 			});
 
 			it('should have id as string', function () {
-				(trs.id).should.be.type('string');
+				(trs).should.have.property('id').and.be.type('string');
 			});
 
 			it('should have type as number and equal 0', function () {
-				(trs.type).should.be.type('number').and.equal(0);
+				(trs).should.have.property('type').and.be.type('number').and.equal(0);
 			});
 
 			it('should have timestamp as number', function () {
-				(trs.timestamp).should.be.type('number').and.not.NaN;
+				(trs).should.have.property('timestamp').and.be.type('number').and.not.NaN();
 			});
 
 			it('should have senderPublicKey as hex string', function () {
-				(trs.senderPublicKey).should.be.type('string').and.match(function () {
-					try {
-						new Buffer(trs.senderPublicKey, 'hex');
-					} catch (e) {
-						return false;
-					}
-
-					return true;
+				(trs).should.have.property('senderPublicKey').and.be.type('string');
+				should.doesNotThrow(function () {
+					new Buffer(trs.senderPublicKey, 'hex');
 				});
 			});
 
 			it('should have recipientId as string and to be equal 58191285901858109L', function () {
-				(trs.recipientId).should.be.type('string').and.equal('58191285901858109L');
+				(trs).should.have.property('recipientId').and.be.type('string').and.equal('58191285901858109L');
 			});
 
-			it('should have amount as number and eqaul to 1000', function () {
-				(trs.amount).should.be.type('number').and.equal(1000);
+			it('should have amount as number and equal to 1000', function () {
+				(trs).should.have.property('amount').and.be.type('number').and.equal(1000);
 			});
 
 			it('should have empty asset object', function () {
-				(trs.asset).should.be.type('object').and.empty;
+				(trs).should.have.property('asset').and.be.type('object').and.empty();
 			});
 
 			it('should does not have second signature', function () {
@@ -109,26 +104,21 @@ describe('transaction.js', function () {
 			});
 
 			it('should have signature as hex string', function () {
-				(trs.signature).should.be.type('string').and.match(function () {
-					try {
-						new Buffer(trs.signature, 'hex');
-					} catch (e) {
-						return false;
-					}
-
-					return true;
+				(trs).should.have.property('signature').and.be.type('string');
+				should.doesNotThrow(function () {
+					new Buffer(trs.signature, 'hex');
 				});
 			});
 
 			it('should be signed correctly', function () {
 				var result = lisk.crypto.verify(trs);
-				(result).should.be.ok;
+				(result).should.be.ok();
 			});
 
 			it('should not be signed correctly now', function () {
 				trs.amount = 10000;
 				var result = lisk.crypto.verify(trs);
-				(result).should.be.not.ok;
+				(result).should.be.not.ok();
 			});
 
 		});
@@ -148,7 +138,7 @@ describe('transaction.js', function () {
 
 		it('should create transaction without second signature', function () {
 			trs = createTransaction('58191285901858109L', 1000, 'secret', secondSecret);
-			(trs).should.be.ok;
+			(trs).should.be.ok();
 		});
 
 		describe('returned transaction', function () {
@@ -158,39 +148,34 @@ describe('transaction.js', function () {
 			});
 
 			it('should have id as string', function () {
-				(trs.id).should.be.type('string');
+				(trs).should.have.property('id').and.be.type('string');
 			});
 
-			it('should have type as number and eqaul 0', function () {
-				(trs.type).should.be.type('number').and.equal(0);
+			it('should have type as number and equal 0', function () {
+				(trs).should.have.property('type').and.be.type('number').and.equal(0);
 			});
 
 			it('should have timestamp as number', function () {
-				(trs.timestamp).should.be.type('number').and.not.NaN;
+				(trs).should.have.property('timestamp').and.be.type('number').and.not.NaN();
 			});
 
 			it('should have senderPublicKey as hex string', function () {
-				(trs.senderPublicKey).should.be.type('string').and.match(function () {
-					try {
-						new Buffer(trs.senderPublicKey, 'hex');
-					} catch (e) {
-						return false;
-					}
-
-					return true;
+				(trs).should.have.property('senderPublicKey').and.be.type('string');
+				should.doesNotThrow(function () {
+					new Buffer(trs.senderPublicKey, 'hex');
 				});
 			});
 
 			it('should have recipientId as string and to be equal 58191285901858109L', function () {
-				(trs.recipientId).should.be.type('string').and.equal('58191285901858109L');
+				(trs).should.have.property('recipientId').and.be.type('string').and.equal('58191285901858109L');
 			});
 
-			it('should have amount as number and eqaul to 1000', function () {
-				(trs.amount).should.be.type('number').and.equal(1000);
+			it('should have amount as number and equal to 1000', function () {
+				(trs).should.have.property('amount').and.be.type('number').and.equal(1000);
 			});
 
 			it('should have empty asset object', function () {
-				(trs.asset).should.be.type('object').and.empty;
+				(trs).should.have.property('asset').and.be.type('object').and.empty();
 			});
 
 			it('should have second signature', function () {
@@ -198,53 +183,86 @@ describe('transaction.js', function () {
 			});
 
 			it('should have signature as hex string', function () {
-				(trs.signature).should.be.type('string').and.match(function () {
-					try {
-						new Buffer(trs.signature, 'hex');
-					} catch (e) {
-						return false;
-					}
-
-					return true;
+				(trs).should.have.property('signature').and.be.type('string');
+				should.doesNotThrow(function () {
+					new Buffer(trs.signature, 'hex');
 				});
 			});
 
 			it('should have signSignature as hex string', function () {
-				(trs.signSignature).should.be.type('string').and.match(function () {
-					try {
-						new Buffer(trs.signSignature, 'hex');
-					} catch (e) {
-						return false;
-					}
-
-					return true;
+				(trs).should.have.property('signSignature').and.be.type('string');
+				should.doesNotThrow(function () {
+					new Buffer(trs.signSignature, 'hex');
 				});
 			});
 
 			it('should be signed correctly', function () {
 				var result = lisk.crypto.verify(trs);
-				(result).should.be.ok;
+				(result).should.be.ok();
 			});
 
 			it('should be second signed correctly', function () {
 				var result = lisk.crypto.verifySecondSignature(trs, keys.publicKey);
-				(result).should.be.ok;
+				(result).should.be.ok();
 			});
 
 			it('should not be signed correctly now', function () {
 				trs.amount = 10000;
 				var result = lisk.crypto.verify(trs);
-				(result).should.be.not.ok;
+				(result).should.be.not.ok();
 			});
 
 			it('should not be second signed correctly now', function () {
 				trs.amount = 10000;
 				var result = lisk.crypto.verifySecondSignature(trs, keys.publicKey);
-				(result).should.be.not.ok;
+				(result).should.be.not.ok();
 			});
 
 		});
 
 	});
 
+	describe('#createTransaction with secondSignature and data', function () {
+		var createTransaction = transaction.createTransaction;
+		var trs = null;
+		var secondSecret = 'second secret';
+
+		it('should be a function', function () {
+			(createTransaction).should.be.type('function');
+		});
+
+		it('should create transaction with second signature and data', function () {
+			trs = createTransaction('58191285901858109L', 1000, 'secret', secondSecret, 'data');
+			(trs).should.be.ok;
+		});
+
+		describe('returned transaction', function () {
+			it('should contain data field with string value', function () {
+				(trs.data).should.be.type('string');
+			});
+		});
+
+	});
+
+	describe('#createTransaction with secondSignature and data', function () {
+		var createTransaction = transaction.createTransaction;
+		var trs = null;
+		var secondSecret = 'second secret';
+
+		it('should be a function', function () {
+			(createTransaction).should.be.type('function');
+		});
+
+		it('should create transaction with second signature and data', function () {
+			trs = createTransaction('58191285901858109L', 1000, 'secret', secondSecret, 'data');
+			(trs).should.be.ok;
+		});
+
+		describe('returned transaction', function () {
+			it('should conatain data field with string value', function () {
+				(trs.data).should.be.type('string');
+			});
+		});
+
+	});
 });

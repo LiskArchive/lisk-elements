@@ -8,7 +8,7 @@ describe('crypto/index.js', function () {
 	var newcrypto = lisk.crypto;
 
 	it('should be ok', function () {
-		(newcrypto).should.be.ok;
+		(newcrypto).should.be.ok();
 	});
 
 	it('should be object', function () {
@@ -33,19 +33,18 @@ describe('crypto/index.js', function () {
 		});
 	});
 
-	describe('#useFirstEightBufferEntriesReversed convert.js', function () {
-		// TODO Test fails because of prototype difference in buffers.
-		// TODO Find out if this is because of NodeJS probably adding them while routing.
+	describe('#useFirstEightBufferEntriesReversed, #toAddress convert.js', function () {
 
-		/*
-		it('should use a Buffer, cut after first 8 entries and reverse them', function () {
+		it('should use a Buffer, cut after first 8 entries and reverse them. Create numeric addresss from this', function () {
+
 			var keypair = newcrypto.getPrivateAndPublicKeyFromSecret('123');
 			var publicKeyHash = newcrypto.getSha256Hash(keypair.publicKey, 'hex');
 			var reversedAndCut = newcrypto.useFirstEightBufferEntriesReversed(publicKeyHash);
+			var numbericAddress = newcrypto.toAddress(reversedAndCut);
 
-			(reversedAndCut).should.be.eql(bufferAimed);
+			(numbericAddress).should.be.equal('12475940823804898745L');
 		});
-		*/
+
 	});
 
 	describe('#getSha256Hash hash.js', function () {
@@ -56,6 +55,7 @@ describe('crypto/index.js', function () {
 
 			(hashString).should.be.equal('a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3');
 		});
+
 	});
 
 	describe('#getPrivateAndPublicKeyFromSecret keys.js', function () {
@@ -114,7 +114,7 @@ describe('crypto/index.js', function () {
 		var signedMessage = newcrypto.signMessageWithSecret(message, secret);
 
 		it('should sign a message with message and secret provided', function () {
-			(signedMessage).should.be.ok;
+			(signedMessage).should.be.ok();
 		});
 
 		it('should sign the message correctly', function () {
@@ -132,7 +132,7 @@ describe('crypto/index.js', function () {
 		var verifyMessage = newcrypto.verifyMessageWithPublicKey(signedMessage, publicKey);
 
 		it('should verify the message correctly', function () {
-			(verifyMessage).should.be.ok;
+			(verifyMessage).should.be.ok();
 		});
 
 		it('should output the original signed message', function () {
@@ -141,16 +141,16 @@ describe('crypto/index.js', function () {
 
 		it('should detect invalid publicKeys', function () {
 			var invalidPublicKey = keypair.publicKey + 'ERROR';
-			expect(function () {
+			(function () {
 				newcrypto.verifyMessageWithPublicKey(signedMessage, invalidPublicKey);
-			}).to.throw(Error, 'Invalid publicKey, expected 32-byte publicKey');
+			}).should.throw('Invalid publicKey, expected 32-byte publicKey');
 		});
 
 		it('should detect not verifiable signature', function () {
 			var signedMessage = newcrypto.signMessageWithSecret(message, secret) + 'ERROR';
-			expect(function () {
+			(function () {
 				newcrypto.verifyMessageWithPublicKey(signedMessage, publicKey);
-			}).to.throw(Error, 'Invalid signature publicKey combination, cannot verify message');
+			}).should.throw('Invalid signature publicKey combination, cannot verify message');
 		});
 	});
 
@@ -202,7 +202,7 @@ describe('crypto/index.js', function () {
 		var encryptedMessage = newcrypto.encryptMessageWithSecret('hello', 'secret', recipientKeyPair.publicKey);
 
 		it('should encrypt a message', function () {
-			(encryptedMessage).should.be.ok;
+			(encryptedMessage).should.be.ok();
 			(encryptedMessage).should.be.type('object');
 		});
 
@@ -222,7 +222,7 @@ describe('crypto/index.js', function () {
 		it('should be able to decrypt the message correctly with given receiver secret', function () {
 			var decryptedMessage = newcrypto.decryptMessageWithSecret(encryptedMessage.encryptedMessage, encryptedMessage.nonce, '1234', senderKeyPair.publicKey);
 
-			(decryptedMessage).should.be.ok;
+			(decryptedMessage).should.be.ok();
 			(decryptedMessage).should.be.equal(message);
 		});
 	});
@@ -247,6 +247,34 @@ describe('crypto/index.js', function () {
 			curveRepresentation = newcrypto.bufferToHex(curveRepresentation);
 
 			(curveRepresentation).should.be.equal('a05621ba2d3f69f054abb1f3c155338bb44ec8b718928cf9d5b206bafd364356');
+		});
+	});
+
+	describe('#signMessageWithTwoSecrets sign.js', function () {
+
+
+		it('should sign a message using two secrets', function () {
+			var secret = '123';
+			var secondSecret = '1234';
+			var message = 'Hello.';
+			var signature = newcrypto.signMessageWithTwoSecrets(message, secret, secondSecret);
+
+			(signature).should.be.equal('7e824f3cf65fd966a9064e4ba0041f82956c795f88343965265cf6e5e6ef94fd3692a1abc6a9c95a23935ad56ae4b72fb85f0317ba5a135dd16fdd916361430d5cabc8fcb71c11280f51ca379abae0f5fdd897d8446170f0a591d943b0b10cc13fe0bdab24daa05243647bb90ced16ebb93bbe07333aae0b80108aa08c1a310348656c6c6f2e');
+		});
+	});
+
+	describe('#verifyMessageWithTwoPublicKeys sign.js', function () {
+
+		it('should verify a message using two publicKeys', function () {
+			
+			var signature = '7e824f3cf65fd966a9064e4ba0041f82956c795f88343965265cf6e5e6ef94fd3692a1abc6a9c95a23935ad56ae4b72fb85f0317ba5a135dd16fdd916361430d5cabc8fcb71c11280f51ca379abae0f5fdd897d8446170f0a591d943b0b10cc13fe0bdab24daa05243647bb90ced16ebb93bbe07333aae0b80108aa08c1a310348656c6c6f2e';
+
+			var publicKey1 = 'a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96feadd';
+			var publicKey2 = 'caf0f4c00cf9240771975e42b6672c88a832f98f01825dda6e001e2aab0bc0cc';
+
+			var verified = newcrypto.verifyMessageWithTwoPublicKeys(signature, publicKey1, publicKey2);
+
+			(verified).should.be.equal('Hello.');
 		});
 	});
 });
