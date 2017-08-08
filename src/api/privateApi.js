@@ -158,8 +158,9 @@ function checkReDial() {
  */
 
 function checkOptions(options) {
-	Object.entries(options)
-		.forEach(([key, value]) => {
+	Object.keys(options)
+		.forEach((key) => {
+			const value = options[key];
 			if (value === undefined || Number.isNaN(value)) {
 				throw new Error(`parameter value "${key}" should not be ${value}`);
 			}

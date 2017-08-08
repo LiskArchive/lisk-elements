@@ -244,8 +244,8 @@ function createTransactionBuffer(transaction, options) {
 			DATA: 64,
 		};
 
-		const totalBytes = Object.values(typeSizes)
-			.reduce((sum, typeSize) => sum + typeSize, 0);
+		const totalBytes = Object.keys(typeSizes)
+			.reduce((sum, key) => sum + typeSizes[key], 0);
 
 		return new ByteBuffer(totalBytes + assetSize, true);
 	}
