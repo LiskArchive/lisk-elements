@@ -346,3 +346,42 @@ export function verifySecondSignature(transaction, publicKey) {
 
 	return res;
 }
+
+/**
+ * @method aesEncrypt
+ * @param passphrase
+ * @param password
+ *
+ * @return {string}
+ */
+
+export function aesEncrypt(passphrase, password) {
+	const iv = crypto.randomBytes(16);
+	const passHash = crypto.createHash('sha256').update(password, 'utf8').digest();
+	const cipher = crypto.createCipheriv('aes-256-cbc', passHash, iv);
+	const encrypted = cipher.update(passphrase);
+	const encryptedString = Buffer.concat([encrypted, cipher.final()]);
+	const cipherText = ''.concat(iv.toString('hex'), '$', encryptedString.toString('hex'));
+
+	return cipherText;
+}
+
+/**
+ * @method aesDecrypt
+ * @param cipherText
+ * @param password
+ *
+ * @return {string}
+ */
+
+export function aesDecrypt(cipherText, password) {
+	const passHash = crypto.createHash('sha256').update(password, 'utf8').digest();
+	const encryptedParts = cipherText.split('$');
+	const iv = Buffer.from(encryptedParts.shift(), 'hex');
+	const encryptedPass = Buffer.from(encryptedParts.join('$'), 'hex');
+	const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(passHash), iv);
+	let decrypted = decipher.update(encryptedPass);
+	decrypted = Buffer.concat([decrypted, decipher.final()]);
+
+	return decrypted.toString();
+}

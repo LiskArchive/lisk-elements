@@ -35,6 +35,8 @@ import {
 	multiSign,
 	verify,
 	verifySecondSignature,
+	aesEncrypt,
+	aesDecrypt,
 } from './sign';
 import {
 	getPrivateAndPublicKeyFromSecret,
@@ -68,6 +70,8 @@ module.exports = {
 	multiSign,
 	verify,
 	verifySecondSignature,
+	aesEncrypt,
+	aesDecrypt,
 	getPrivateAndPublicKeyFromSecret,
 	getRawPrivateAndPublicKeyFromSecret,
 	getAddressFromPublicKey,

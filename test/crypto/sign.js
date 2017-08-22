@@ -141,7 +141,7 @@ ${defaultSignature}
 		});
 	});
 
-	describe('#signMessageWithTwoSecrets @now', () => {
+	describe('#signMessageWithTwoSecrets', () => {
 		it('should sign a message using two secrets', () => {
 			const signature = cryptoModule.signMessageWithTwoSecrets(
 				notSecretMessage, defaultSecret, defaultSecondSecret,
@@ -151,7 +151,7 @@ ${defaultSignature}
 		});
 	});
 
-	describe('#verifyMessageWithTwoPublicKeys @now', () => {
+	describe('#verifyMessageWithTwoPublicKeys', () => {
 		const publicKey1 = defaultPublicKey;
 		const publicKey2 = defaultSecondPublicKey;
 		const invalidPublicKey1 = 'a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96fe';
@@ -203,7 +203,7 @@ ${defaultSignature}
 		});
 	});
 
-	describe('sign and verify @now', () => {
+	describe('sign and verify', () => {
 		const sign = cryptoModule.sign;
 		const verify = cryptoModule.verify;
 		const keys = cryptoModule.getKeys('123');
@@ -313,6 +313,27 @@ ${defaultSignature}
 				const multiSignature = multiSign(multiSigtransaction, keys);
 
 				(multiSignature).should.be.eql(expectedMultiSignature);
+			});
+		});
+
+		describe('encrypting passphrase', () => {
+			const secretPassphrase = 'minute omit local rare sword knee banner pair rib museum shadow juice';
+			const password = 'myTotal53cr3t%&';
+			const encryptString = cryptoModule.aesEncrypt(secretPassphrase, password);
+
+			describe('#aesEncrypt', () => {
+				it('should encrypt a given secret with a password', () => {
+					(encryptString).should.be.ok();
+					(encryptString).should.be.type('string');
+					(encryptString).should.containEql('$');
+				});
+			});
+
+			describe('#aesDecrypt', () => {
+				it('should decrypt a given cipher with a password', () => {
+					const decryptedString = cryptoModule.aesDecrypt(encryptString, password);
+					(decryptedString).should.be.eql(secretPassphrase);
+				});
 			});
 		});
 	});
