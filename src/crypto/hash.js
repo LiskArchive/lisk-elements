@@ -12,9 +12,19 @@
  * Removal or modification of this copyright notice is prohibited.
  *
  */
+import crypto from 'crypto-browserify';
+import { getBytes } from './../transactions/transactionBytes';
+
+/**
+ * @method getSha256Hash
+ * @param stringToSign
+ * @param format
+ *
+ * @return {string}
+ */
 
 // TODO: Discuss behaviour with format and hashing
-function getSha256Hash(stringToSign, format) {
+export function getSha256Hash(stringToSign, format) {
 	const encodedString = (!format || format === 'utf8')
 		? naclInstance.encode_utf8(stringToSign)
 		: naclInstance.from_hex(stringToSign);
@@ -22,6 +32,14 @@ function getSha256Hash(stringToSign, format) {
 	return naclInstance.crypto_hash_sha256(encodedString);
 }
 
-module.exports = {
-	getSha256Hash,
-};
+/**
+ * @method getHash
+ * @param transaction Object
+ *
+ * @return {string}
+ */
+
+export function getHash(transaction) {
+	const bytes = getBytes(transaction);
+	return crypto.createHash('sha256').update(bytes).digest();
+}
