@@ -70,12 +70,9 @@ function LiskAPI(providedOptions = {}) {
 
 	this.options = options;
 	this.ssl = options.ssl;
-	// Random peer can be set by settings with randomPeer: true | false
-	// Random peer is automatically enabled when no options.node has been entered. Else will be set
-	// to false.
-	// If the desired behaviour is to have an own node and automatic peer discovery, randomPeer
-	// should be set to true explicitly
-	this.randomPeer = (typeof options.randomPeer === 'boolean') ? options.randomPeer : !(options.node);
+	this.randomPeer = (options.randomPeer || typeof options.randomPeer === 'boolean')
+		? options.randomPeer
+		: !(options.node);
 	this.testnet = options.testnet;
 	this.bannedPeers = options.bannedPeers;
 	this.currentPeer = options.node || privateApi.selectNode.call(this);

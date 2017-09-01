@@ -130,6 +130,56 @@ describe('Lisk API module', () => {
 				(LSK).should.have.property('testnet').be.equal(true);
 			});
 		});
+
+		describe('on initialize SSL it', () => {
+			it('should set SSL to true', () => {
+				LSK = new LiskAPI({ ssl: true });
+				(LSK).should.have.property('ssl').be.true();
+			});
+
+			it('should set SSL to false', () => {
+				LSK = new LiskAPI({ ssl: false });
+				(LSK).should.have.property('ssl').be.false();
+			});
+		});
+
+		describe('on initialize randomPeer it', () => {
+			it('should set randomPeer to true when no node is given and randomPeer not explicitly set', () => {
+				(LSK).should.have.property('randomPeer').be.true();
+			});
+
+			it('should set randomPeer to true', () => {
+				LSK = new LiskAPI({ randomPeer: true });
+				(LSK).should.have.property('randomPeer').be.true();
+			});
+
+			it('should set randomPeer to false', () => {
+				LSK = new LiskAPI({ randomPeer: false });
+				(LSK).should.have.property('randomPeer').be.false();
+			});
+
+			it('should set randomPeer to false when node is given but randomPeer not explicitly set', () => {
+				LSK = new LiskAPI({ node: defaultUrl, randomPeer: '' });
+				(LSK).should.have.property('randomPeer').be.false();
+			});
+		});
+
+		describe('on initialize port it', () => {
+			it('should set port to desired port if set', () => {
+				LSK = new LiskAPI({ port: 2000 });
+				(LSK).should.have.property('port').be.equal(2000);
+			});
+
+			it('should set port to default port if not set', () => {
+				LSK = new LiskAPI({ port: undefined });
+				(LSK).should.have.property('port').be.equal(8000);
+			});
+
+			it('should set port to default testnet port if not set but used testnet', () => {
+				LSK = new LiskAPI({ port: undefined, testnet: true });
+				(LSK).should.have.property('port').be.equal(7000);
+			});
+		});
 	});
 
 	describe('#getNethash', () => {
