@@ -177,6 +177,42 @@ describe('Lisk API module', () => {
 			});
 		});
 
+		describe('on initialize peers', () => {
+			it('should set all peers list to peers on initialization with option passed', () => {
+				LSK = new LiskAPI({ peers: defaultPeers });
+				(LSK).should.have.property('defaultPeers').be.equal(defaultPeers);
+				(LSK).should.have.property('defaultTestnetPeers').be.equal(defaultPeers);
+				(LSK).should.have.property('defaultSSLPeers').be.equal(defaultPeers);
+			});
+
+			it('should set all bannedPeers list to bannedPeers on initialization with option passed', () => {
+				LSK = new LiskAPI({ bannedPeers: defaultBannedPeers });
+				(LSK).should.have.property('bannedPeers').be.equal(defaultBannedPeers);
+			});
+
+			it('should set currentPeer to peer on initialization with option passed', () => {
+				LSK = new LiskAPI({ node: defaultUrl });
+				(LSK).should.have.property('currentPeer').be.equal(defaultUrl);
+			});
+		});
+
+		describe('on initialize nethash', () => {
+			it('should set nethash to devnet when own nethash used', () => {
+				const ownNethash = '123';
+				const expectedDevNethash = {
+					'Content-Type': 'application/json',
+					nethash: ownNethash,
+					broadhash: mainnetHash,
+					os: 'lisk-js-api',
+					version: '0.0.0a',
+					minVersion: '>=0.5.0',
+					port: livePort,
+				};
+				LSK = new LiskAPI({ nethash: ownNethash });
+				(LSK).should.have.property('nethash').be.eql(expectedDevNethash);
+			});
+		});
+
 		describe('interaction with config.json default values', () => {
 			it('passed in options should override default values', () => {
 				const options = {
@@ -197,7 +233,6 @@ describe('Lisk API module', () => {
 				(LSK).should.have.property('port').be.equal(livePort);
 				(LSK.nethash).should.have.property('nethash').be.eql(testnetHash);
 				(LSK).should.have.property('bannedPeers').be.eql(defaultPeers);
-
 			});
 		});
 	});
