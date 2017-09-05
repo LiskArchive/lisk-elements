@@ -142,6 +142,11 @@ describe('Lisk API module', () => {
 				LSK = new LiskAPI({ ssl: false });
 				(LSK).should.have.property('ssl').be.false();
 			});
+
+			it('should set SSL to false on initialization without option passed', () => {
+				LSK = new LiskAPI({ });
+				(LSK).should.have.property('ssl').be.false();
+			});
 		});
 
 		describe('on initialize randomPeer', () => {
