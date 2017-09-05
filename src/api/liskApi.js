@@ -22,6 +22,8 @@
  * - Connecting to Lisk peers or to localhost instance of Lisk core.
  * - Configurable network settings to work in different Lisk environments.
  *
+ * @example
+ *
  *     var options = {
  *         ssl: false,
  *         node: '',
@@ -36,8 +38,9 @@
  *     var lisk = require('lisk-js');
  *     var LSK = lisk.api(options);
  *
- * @class lisk.api()
- * @main lisk
+ * @param {Object} - Initialization Object for the LiskAPI instance.
+ * @returns {LiskAPI} - A new instance of LiskAPI
+ * @constructor
  */
 import privateApi from './privateApi';
 import config from '../../config.json';
@@ -70,9 +73,7 @@ function LiskAPI(providedOptions = {}) {
 
 	this.options = options;
 	this.ssl = options.ssl;
-	this.randomPeer = (options.randomPeer || typeof options.randomPeer === 'boolean')
-		? options.randomPeer
-		: !(options.node);
+	this.randomPeer = Boolean(options.randomPeer);
 	this.testnet = options.testnet;
 	this.bannedPeers = options.bannedPeers;
 	this.currentPeer = options.node || privateApi.selectNode.call(this);

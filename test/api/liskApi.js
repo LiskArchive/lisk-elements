@@ -52,6 +52,7 @@ describe('Lisk API module', () => {
 	const defaultAmount = 1 * fixedPoint;
 	const defaultOrderBy = 'rate:asc';
 	const defaultBannedPeers = ['naughty1', 'naughty2', 'naughty3'];
+	const defaultPeers = ['goodPeer1', 'goodPeer2', 'goodPeer3'];
 	const defaultSelectedNode = 'selected_node';
 	const defaultUrl = 'node.url.com';
 	const defaultRequestPromiseResult = {
@@ -122,62 +123,81 @@ describe('Lisk API module', () => {
 				LSK = new LiskAPI({ testnet: true });
 			});
 
-			it('should set the port to 7000', () => {
+			it('should set the port to 7000 on initialization with option testnet true passed', () => {
 				(LSK).should.have.property('port').be.equal(testPort);
 			});
 
-			it('should set testnet to true', () => {
+			it('should set testnet to true on initialization with option testnet true passed', () => {
 				(LSK).should.have.property('testnet').be.equal(true);
 			});
 		});
 
-		describe('on initialize SSL it', () => {
-			it('should set SSL to true', () => {
+		describe('on initialize SSL', () => {
+			it('should set SSL to true on initialization with option passed', () => {
 				LSK = new LiskAPI({ ssl: true });
 				(LSK).should.have.property('ssl').be.true();
 			});
 
-			it('should set SSL to false', () => {
+			it('should set SSL to false on initialization with option passed', () => {
 				LSK = new LiskAPI({ ssl: false });
 				(LSK).should.have.property('ssl').be.false();
 			});
 		});
 
-		describe('on initialize randomPeer it', () => {
+		describe('on initialize randomPeer', () => {
 			it('should set randomPeer to true when no node is given and randomPeer not explicitly set', () => {
 				(LSK).should.have.property('randomPeer').be.true();
 			});
 
-			it('should set randomPeer to true', () => {
+			it('should set randomPeer to true on initialization with option passed', () => {
 				LSK = new LiskAPI({ randomPeer: true });
 				(LSK).should.have.property('randomPeer').be.true();
 			});
 
-			it('should set randomPeer to false', () => {
+			it('should set randomPeer to false on initialization with option passed', () => {
 				LSK = new LiskAPI({ randomPeer: false });
-				(LSK).should.have.property('randomPeer').be.false();
-			});
-
-			it('should set randomPeer to false when node is given but randomPeer not explicitly set', () => {
-				LSK = new LiskAPI({ node: defaultUrl, randomPeer: '' });
 				(LSK).should.have.property('randomPeer').be.false();
 			});
 		});
 
-		describe('on initialize port it', () => {
-			it('should set port to desired port if set', () => {
+		describe('on initialize port', () => {
+			it('should set port to desired port if set on initialization with option passed', () => {
 				LSK = new LiskAPI({ port: 2000 });
 				(LSK).should.have.property('port').be.equal(2000);
 			});
 
-			it('should set port to default port if not set', () => {
-				LSK = new LiskAPI({ port: undefined });
-				(LSK).should.have.property('port').be.equal(8000);
-			});
-
-			it('should set port to default testnet port if not set but used testnet', () => {
+			it('should set port to default testnet port if not set but used testnet on initialization with options passed', () => {
 				LSK = new LiskAPI({ port: undefined, testnet: true });
 				(LSK).should.have.property('port').be.equal(7000);
+			});
+
+			it('should set testnet true and port to 100 on initialization when options passed', () => {
+				LSK = new LiskAPI({ port: 100, testnet: true });
+				(LSK).should.have.property('port').be.equal(100);
+			});
+		});
+
+		describe('interaction with config.json default values', () => {
+			it('passed in options should override default values', () => {
+				const options = {
+					testnet: true,
+					ssl: true,
+					randomPeer: false,
+					node: defaultUrl,
+					port: livePort,
+					nethash: testnetHash,
+					bannedPeers: defaultPeers,
+				};
+
+				LSK = new LiskAPI(options);
+				(LSK).should.have.property('testnet').be.true();
+				(LSK).should.have.property('ssl').be.true();
+				(LSK).should.have.property('randomPeer').be.false();
+				(LSK).should.have.property('currentPeer').be.eql(defaultUrl);
+				(LSK).should.have.property('port').be.equal(livePort);
+				(LSK.nethash).should.have.property('nethash').be.eql(testnetHash);
+				(LSK).should.have.property('bannedPeers').be.eql(defaultPeers);
+
 			});
 		});
 	});
