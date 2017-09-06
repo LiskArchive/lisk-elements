@@ -24,6 +24,8 @@
  *
  * @example
  *
+ *     var lisk = require('lisk-js');
+ *
  *     var options = {
  *         ssl: false,
  *         node: '',
@@ -35,7 +37,6 @@
  *         nethash: ''
  *     };
  *
- *     var lisk = require('lisk-js');
  *     var LSK = lisk.api(options);
  *
  * @param {Object} - Initialization Object for the LiskAPI instance.
