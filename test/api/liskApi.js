@@ -218,7 +218,6 @@ describe('Lisk API module', () => {
 					(LSK).should.have.property('nethash').be.eql(expectedDevNethash);
 				});
 			});
-
 		});
 
 		describe('interaction with config.json default values', () => {
