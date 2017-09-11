@@ -160,14 +160,14 @@ ${defaultSignature}
 			(verifyMessageWithTwoPublicKeys.bind(null, defaultTwoSignSignature, publicKey1, invalidPublicKey2)).should.throw('Invalid second publicKey, expected 32-byte publicKey');
 		});
 
-		it('should throw on invalid primary signature', () => {
+		it('should return false on invalid primary signature', () => {
 			const invalidTwoSignSignature = defaultTwoSignSignature.slice(0, 20);
 			(verifyMessageWithTwoPublicKeys(
 				invalidTwoSignSignature, publicKey1, publicKey2,
 			)).should.be.false();
 		});
 
-		it('should throw on invalid secondary signature', () => {
+		it('should return false on invalid secondary signature', () => {
 			const msgBytes = naclInstance.encode_utf8(notSecretMessage);
 			const firstKeys = getRawPrivateAndPublicKeyFromSecret(defaultSecret);
 			const secondKeys = getRawPrivateAndPublicKeyFromSecret(defaultSecondSecret);
