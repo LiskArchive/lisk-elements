@@ -163,7 +163,7 @@ ${defaultSignature}
 		it('should throw on invalid primary signature', () => {
 			const invalidTwoSignSignature = defaultTwoSignSignature.slice(0, 20);
 			(verifyMessageWithTwoPublicKeys(
-				invalidTwoSignSignature, publicKey1, publicKey2
+				invalidTwoSignSignature, publicKey1, publicKey2,
 			)).should.be.false();
 		});
 
@@ -176,7 +176,7 @@ ${defaultSignature}
 				signedMessage, secondKeys.privateKey,
 			));
 			(verifyMessageWithTwoPublicKeys(
-				doubleSignedMessage, publicKey1, publicKey2
+				doubleSignedMessage, publicKey1, publicKey2,
 			)).should.be.false();
 		});
 	});
