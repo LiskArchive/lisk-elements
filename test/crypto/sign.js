@@ -71,7 +71,7 @@ describe('sign', () => {
 
 		it('should detect not verifiable signature', () => {
 			const invalidSignedMessage = `${signMessageWithSecret(notSecretMessage, defaultSecret)}ERROR`;
-			(verifyMessageWithPublicKey.bind(null, invalidSignedMessage, defaultPublicKey)).should.throw('Invalid signature publicKey combination, cannot verify message');
+			(verifyMessageWithPublicKey(invalidSignedMessage, defaultPublicKey)).should.be.false();
 		});
 	});
 
@@ -162,7 +162,7 @@ ${defaultSignature}
 
 		it('should throw on invalid primary signature', () => {
 			const invalidTwoSignSignature = defaultTwoSignSignature.slice(0, 20);
-			(verifyMessageWithTwoPublicKeys.bind(null, invalidTwoSignSignature, publicKey1, publicKey2)).should.throw('Invalid signature second publicKey, cannot verify message');
+			(verifyMessageWithTwoPublicKeys(invalidTwoSignSignature, publicKey1, publicKey2)).should.be.false();
 		});
 
 		it('should throw on invalid secondary signature', () => {
@@ -173,7 +173,7 @@ ${defaultSignature}
 			const doubleSignedMessage = bufferToHex(naclInstance.crypto_sign(
 				signedMessage, secondKeys.privateKey,
 			));
-			(verifyMessageWithTwoPublicKeys.bind(null, doubleSignedMessage, publicKey1, publicKey2)).should.throw('Invalid signature first publicKey, cannot verify message');
+			(verifyMessageWithTwoPublicKeys(doubleSignedMessage, publicKey1, publicKey2)).should.be.false();
 		});
 	});
 

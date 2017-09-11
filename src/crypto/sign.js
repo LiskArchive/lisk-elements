@@ -89,7 +89,7 @@ export function verifyMessageWithPublicKey(signedMessage, publicKey) {
 	if (signatureVerified) {
 		return naclInstance.decode_utf8(signatureVerified);
 	}
-	throw new Error('Invalid signature publicKey combination, cannot verify message');
+	return false;
 }
 
 /**
@@ -119,7 +119,7 @@ export function verifyMessageWithTwoPublicKeys(signedMessage, publicKey, secondP
 	);
 
 	if (!secondSignatureVerified) {
-		throw new Error('Invalid signature second publicKey, cannot verify message');
+		return false;
 	}
 
 	const firstSignatureVerified = naclInstance.crypto_sign_open(
@@ -127,7 +127,7 @@ export function verifyMessageWithTwoPublicKeys(signedMessage, publicKey, secondP
 	);
 
 	if (!firstSignatureVerified) {
-		throw new Error('Invalid signature first publicKey, cannot verify message');
+		return false;
 	}
 	return naclInstance.decode_utf8(firstSignatureVerified);
 }
