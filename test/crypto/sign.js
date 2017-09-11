@@ -162,7 +162,9 @@ ${defaultSignature}
 
 		it('should throw on invalid primary signature', () => {
 			const invalidTwoSignSignature = defaultTwoSignSignature.slice(0, 20);
-			(verifyMessageWithTwoPublicKeys(invalidTwoSignSignature, publicKey1, publicKey2)).should.be.false();
+			(verifyMessageWithTwoPublicKeys(
+				invalidTwoSignSignature, publicKey1, publicKey2
+			)).should.be.false();
 		});
 
 		it('should throw on invalid secondary signature', () => {
@@ -173,7 +175,9 @@ ${defaultSignature}
 			const doubleSignedMessage = bufferToHex(naclInstance.crypto_sign(
 				signedMessage, secondKeys.privateKey,
 			));
-			(verifyMessageWithTwoPublicKeys(doubleSignedMessage, publicKey1, publicKey2)).should.be.false();
+			(verifyMessageWithTwoPublicKeys(
+				doubleSignedMessage, publicKey1, publicKey2
+			)).should.be.false();
 		});
 	});
 
