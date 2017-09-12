@@ -52,26 +52,41 @@ describe('sign', () => {
 		const signedMessage = signMessageWithSecret(notSecretMessage, defaultSecret);
 
 		it('should signTransaction the message correctly', () => {
-			(signedMessage).should.be.equal(defaultSignature);
+			(signedMessage).should.have.property('message').be.equal(notSecretMessage);
+			(signedMessage).should.have.property('signature').be.equal(defaultSignature);
+			(signedMessage).should.have.property('publicKey').be.equal(defaultPublicKey);
 		});
 	});
 
+
 	describe('#verifyMessageWithPublicKey', () => {
-		const signedMessage = signMessageWithSecret(notSecretMessage, defaultSecret);
-		const verifyMessage = verifyMessageWithPublicKey(signedMessage, defaultPublicKey);
+		const verifyMessage = verifyMessageWithPublicKey({
+				signature: defaultSignature,
+				publicKey: defaultPublicKey,
+			});
 
 		it('should output the original signed message', () => {
-			(verifyMessage).should.be.equal(notSecretMessage);
+			(verifyMessage).should.have.property('message').be.equal(notSecretMessage);
+			(verifyMessage).should.have.property('signature').be.equal(defaultSignature);
+			(verifyMessage).should.have.property('publicKey').be.equal(defaultPublicKey);
+			(verifyMessage).should.have.property('verification').be.true();
 		});
 
 		it('should detect invalid publicKeys', () => {
 			const invalidPublicKey = `${defaultPublicKey}ERROR`;
-			(verifyMessageWithPublicKey.bind(null, signedMessage, invalidPublicKey)).should.throw('Invalid publicKey, expected 32-byte publicKey');
+			(verifyMessageWithPublicKey.bind(null, {
+					signature: defaultSignature,
+					publicKey: invalidPublicKey,
+				})).should.throw('Invalid publicKey, expected 32-byte publicKey');
 		});
 
 		it('should detect not verifiable signature', () => {
-			const invalidSignedMessage = `${signMessageWithSecret(notSecretMessage, defaultSecret)}ERROR`;
-			(verifyMessageWithPublicKey(invalidSignedMessage, defaultPublicKey)).should.be.false();
+			const { signature } = signMessageWithSecret(notSecretMessage, defaultSecret);
+			const invalidSignedMessage = `${signature}ERROR`;
+			(verifyMessageWithPublicKey({
+				signature: invalidSignedMessage,
+				publicKey: defaultPublicKey,
+			}).verification).should.be.false();
 		});
 	});
 
@@ -89,7 +104,7 @@ ${defaultSignature}
 
 		it('#printSignedMessage should wrap the signed message into a printed Lisk template', () => {
 			const signedMessage = signMessageWithSecret(notSecretMessage, defaultSecret);
-			const printedMessage = printSignedMessage(notSecretMessage, signedMessage, defaultPublicKey);
+			const printedMessage = printSignedMessage(signedMessage);
 
 			(printedMessage).should.be.equal(signedMessageExample);
 		});
@@ -99,6 +114,7 @@ ${defaultSignature}
 			(signedAndPrintedMessage).should.be.equal(signedMessageExample);
 		});
 	});
+
 	describe('#encryptMessageWithSecret', () => {
 		const encryptedMessage = encryptMessageWithSecret(
 			secretMessage, defaultSecret, defaultPublicKey,
@@ -111,6 +127,8 @@ ${defaultSignature}
 		it('encrypted message should have nonce and encrypted message hex', () => {
 			(encryptedMessage).should.have.property('nonce');
 			(encryptedMessage).should.have.property('encryptedMessage');
+			(encryptedMessage).should.have.property('senderPublicKey');
+			(encryptedMessage).should.have.property('recipientPublicKey');
 		});
 	});
 
