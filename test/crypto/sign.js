@@ -159,18 +159,6 @@ ${defaultSignature}
 			(decryptedMessage).should.have.property('message').be.equal(null);
 			(decryptedMessage).should.have.property('error').be.equal('Could not open message, secret passphrase does not match');
 		});
-
-		it('should fail on wrong nonce', () => {
-			const invalidObjectToDecrypt = {
-				encryptedMessage: '23924967331d5e08471e7526f467e62383440b2a972bc5ef1b605c6b8de4',
-				nonce: 'd345e13b2ac4c6bbbb07e49330f9760d86f31450991a405d'.slice(0, 10),
-				senderPublicKey: '5d036a858ce89f844491762eb89e2bfbd50a4a0a0da658e4b2628b25b117ae09',
-				secret: 'wrong secret',
-			};
-			const decryptedMessage = decryptMessageWithSecret(invalidObjectToDecrypt);
-			(decryptedMessage).should.have.property('message').be.equal(null);
-			(decryptedMessage).should.have.property('error').be.equal('Could not open message, secret passphrase does not match');
-		});
 	});
 
 	describe('#signMessageWithTwoSecrets', () => {
