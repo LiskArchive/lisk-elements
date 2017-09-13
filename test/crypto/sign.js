@@ -61,9 +61,9 @@ describe('sign', () => {
 
 	describe('#verifyMessageWithPublicKey', () => {
 		const verifyMessage = verifyMessageWithPublicKey({
-				signature: defaultSignature,
-				publicKey: defaultPublicKey,
-			});
+			signature: defaultSignature,
+			publicKey: defaultPublicKey,
+		});
 
 		it('should output the original signed message', () => {
 			(verifyMessage).should.have.property('message').be.equal(notSecretMessage);
@@ -75,9 +75,9 @@ describe('sign', () => {
 		it('should detect invalid publicKeys', () => {
 			const invalidPublicKey = `${defaultPublicKey}ERROR`;
 			(verifyMessageWithPublicKey.bind(null, {
-					signature: defaultSignature,
-					publicKey: invalidPublicKey,
-				})).should.throw('Invalid publicKey, expected 32-byte publicKey');
+				signature: defaultSignature,
+				publicKey: invalidPublicKey,
+			})).should.throw('Invalid publicKey, expected 32-byte publicKey');
 		});
 
 		it('should detect not verifiable signature', () => {

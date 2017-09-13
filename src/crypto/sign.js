@@ -203,9 +203,7 @@ export function printSignedMessage({ message, signature, publicKey }) {
  */
 
 export function signAndPrintMessage(message, secret) {
-	const { publicKey } = getPrivateAndPublicKeyFromSecret(secret);
 	const signedMessage = signMessageWithSecret(message, secret);
-
 	return printSignedMessage(signedMessage);
 }
 
