@@ -52,26 +52,41 @@ describe('sign', () => {
 		const signedMessage = signMessageWithSecret(notSecretMessage, defaultSecret);
 
 		it('should signTransaction the message correctly', () => {
-			(signedMessage).should.be.equal(defaultSignature);
+			(signedMessage).should.have.property('message').be.equal(notSecretMessage);
+			(signedMessage).should.have.property('signature').be.equal(defaultSignature);
+			(signedMessage).should.have.property('publicKey').be.equal(defaultPublicKey);
 		});
 	});
 
+
 	describe('#verifyMessageWithPublicKey', () => {
-		const signedMessage = signMessageWithSecret(notSecretMessage, defaultSecret);
-		const verifyMessage = verifyMessageWithPublicKey(signedMessage, defaultPublicKey);
+		const verifyMessage = verifyMessageWithPublicKey({
+			signature: defaultSignature,
+			publicKey: defaultPublicKey,
+		});
 
 		it('should output the original signed message', () => {
-			(verifyMessage).should.be.equal(notSecretMessage);
+			(verifyMessage).should.have.property('message').be.equal(notSecretMessage);
+			(verifyMessage).should.have.property('signature').be.equal(defaultSignature);
+			(verifyMessage).should.have.property('publicKey').be.equal(defaultPublicKey);
+			(verifyMessage).should.have.property('verification').be.true();
 		});
 
 		it('should detect invalid publicKeys', () => {
 			const invalidPublicKey = `${defaultPublicKey}ERROR`;
-			(verifyMessageWithPublicKey.bind(null, signedMessage, invalidPublicKey)).should.throw('Invalid publicKey, expected 32-byte publicKey');
+			(verifyMessageWithPublicKey.bind(null, {
+				signature: defaultSignature,
+				publicKey: invalidPublicKey,
+			})).should.throw('Invalid publicKey, expected 32-byte publicKey');
 		});
 
 		it('should detect not verifiable signature', () => {
-			const invalidSignedMessage = `${signMessageWithSecret(notSecretMessage, defaultSecret)}ERROR`;
-			(verifyMessageWithPublicKey.bind(null, invalidSignedMessage, defaultPublicKey)).should.throw('Invalid signature publicKey combination, cannot verify message');
+			const { signature } = signMessageWithSecret(notSecretMessage, defaultSecret);
+			const invalidSignedMessage = `${signature}ERROR`;
+			(verifyMessageWithPublicKey({
+				signature: invalidSignedMessage,
+				publicKey: defaultPublicKey,
+			}).verification).should.be.false();
 		});
 	});
 
@@ -89,7 +104,7 @@ ${defaultSignature}
 
 		it('#printSignedMessage should wrap the signed message into a printed Lisk template', () => {
 			const signedMessage = signMessageWithSecret(notSecretMessage, defaultSecret);
-			const printedMessage = printSignedMessage(notSecretMessage, signedMessage, defaultPublicKey);
+			const printedMessage = printSignedMessage(signedMessage);
 
 			(printedMessage).should.be.equal(signedMessageExample);
 		});
@@ -99,6 +114,7 @@ ${defaultSignature}
 			(signedAndPrintedMessage).should.be.equal(signedMessageExample);
 		});
 	});
+
 	describe('#encryptMessageWithSecret', () => {
 		const encryptedMessage = encryptMessageWithSecret(
 			secretMessage, defaultSecret, defaultPublicKey,
@@ -111,21 +127,37 @@ ${defaultSignature}
 		it('encrypted message should have nonce and encrypted message hex', () => {
 			(encryptedMessage).should.have.property('nonce');
 			(encryptedMessage).should.have.property('encryptedMessage');
+			(encryptedMessage).should.have.property('senderPublicKey');
+			(encryptedMessage).should.have.property('recipientPublicKey');
 		});
 	});
 
 	describe('#decryptMessageWithSecret', () => {
-		const encryptedMessage = encryptMessageWithSecret(
-			secretMessage, defaultSecret, defaultPublicKey,
-		);
+		const objectToDecrypt = {
+			encryptedMessage: '23924967331d5e08471e7526f467e62383440b2a972bc5ef1b605c6b8de4',
+			nonce: 'd345e13b2ac4c6bbbb07e49330f9760d86f31450991a405d',
+			senderPublicKey: '5d036a858ce89f844491762eb89e2bfbd50a4a0a0da658e4b2628b25b117ae09',
+			secret: defaultSecondSecret,
+		};
 
-		it('should be able to decrypt the message correctly with given receiver secret', () => {
-			const decryptedMessage = decryptMessageWithSecret(
-				encryptedMessage.encryptedMessage, encryptedMessage.nonce, defaultSecret, defaultPublicKey,
-			);
+		it('should be able to decrypt the message correctly with given recipient secret', () => {
+			const decryptedMessage = decryptMessageWithSecret(objectToDecrypt);
+			(decryptedMessage).should.have.property('message').be.equal(secretMessage);
+			(decryptedMessage).should.have.property('encryptedMessage').be.equal(objectToDecrypt.encryptedMessage);
+			(decryptedMessage).should.have.property('nonce').be.equal(objectToDecrypt.nonce);
+			(decryptedMessage).should.have.property('senderPublicKey').be.equal(objectToDecrypt.senderPublicKey);
+		});
 
-			(decryptedMessage).should.be.ok();
-			(decryptedMessage).should.be.equal(secretMessage);
+		it('should fail on wrong secret', () => {
+			const invalidObjectToDecrypt = {
+				encryptedMessage: '23924967331d5e08471e7526f467e62383440b2a972bc5ef1b605c6b8de4',
+				nonce: 'd345e13b2ac4c6bbbb07e49330f9760d86f31450991a405d',
+				senderPublicKey: '5d036a858ce89f844491762eb89e2bfbd50a4a0a0da658e4b2628b25b117ae09',
+				secret: 'wrong secret',
+			};
+			const decryptedMessage = decryptMessageWithSecret(invalidObjectToDecrypt);
+			(decryptedMessage).should.have.property('message').be.equal(null);
+			(decryptedMessage).should.have.property('error').be.equal('Could not open message, secret passphrase does not match');
 		});
 	});
 
@@ -135,37 +167,64 @@ ${defaultSignature}
 				notSecretMessage, defaultSecret, defaultSecondSecret,
 			);
 
-			(signature).should.be.equal(defaultTwoSignSignature);
+			(signature).should.have.property('signature').be.equal(defaultTwoSignSignature);
+			(signature).should.have.property('publicKey').be.equal(defaultPublicKey);
+			(signature).should.have.property('secondPublicKey').be.equal(defaultSecondPublicKey);
+			(signature).should.have.property('signature').be.equal(defaultTwoSignSignature);
 		});
 	});
 
 	describe('#verifyMessageWithTwoPublicKeys', () => {
 		const publicKey1 = defaultPublicKey;
 		const publicKey2 = defaultSecondPublicKey;
-		const invalidPublicKey1 = 'a4465fd76c16fcc458448076372abf1912cc5b150663a64dffefe550f96fe';
-		const invalidPublicKey2 = 'caf0f4c00cf9240771975e42b6672c88a832f98f01825dda6e001e2aab0bc';
+		const encryptMessageObject = {
+			message: notSecretMessage,
+			signature: defaultTwoSignSignature,
+			publicKey: publicKey1,
+			secondPublicKey: publicKey2,
+		};
 		it('should verify a message using two publicKeys', () => {
-			const verified = verifyMessageWithTwoPublicKeys(
-				defaultTwoSignSignature, publicKey1, publicKey2,
-			);
+			const verified = verifyMessageWithTwoPublicKeys(encryptMessageObject);
 
-			(verified).should.be.equal(notSecretMessage);
+			(verified).should.have.property('message').be.equal(notSecretMessage);
+			(verified).should.have.property('signature').be.equal(defaultTwoSignSignature);
+			(verified).should.have.property('publicKey').be.equal(publicKey1);
+			(verified).should.have.property('secondPublicKey').be.equal(publicKey2);
 		});
 
 		it('should throw on invalid first publicKey', () => {
-			(verifyMessageWithTwoPublicKeys.bind(null, defaultTwoSignSignature, invalidPublicKey1, publicKey2)).should.throw('Invalid first publicKey, expected 32-byte publicKey');
+			const encryptMessageObjectInvalidFirstPubKey = {
+				message: notSecretMessage,
+				signature: defaultTwoSignSignature,
+				publicKey: `${publicKey1}ERR`,
+				secondPublicKey: publicKey2,
+			};
+			(verifyMessageWithTwoPublicKeys.bind(null, encryptMessageObjectInvalidFirstPubKey)).should.throw('Invalid first publicKey, expected 32-byte publicKey');
 		});
 
 		it('should throw on invalid second publicKey', () => {
-			(verifyMessageWithTwoPublicKeys.bind(null, defaultTwoSignSignature, publicKey1, invalidPublicKey2)).should.throw('Invalid second publicKey, expected 32-byte publicKey');
+			const encryptMessageObjectInvalidSecondPubKey = {
+				message: notSecretMessage,
+				signature: defaultTwoSignSignature,
+				publicKey: publicKey1,
+				secondPublicKey: `${publicKey2}ERR`,
+			};
+			(verifyMessageWithTwoPublicKeys.bind(null, encryptMessageObjectInvalidSecondPubKey)).should.throw('Invalid second publicKey, expected 32-byte publicKey');
 		});
 
-		it('should throw on invalid primary signature', () => {
-			const invalidTwoSignSignature = defaultTwoSignSignature.slice(0, 20);
-			(verifyMessageWithTwoPublicKeys.bind(null, invalidTwoSignSignature, publicKey1, publicKey2)).should.throw('Invalid signature second publicKey, cannot verify message');
+		it('should return false on invalid primary signature', () => {
+			const encryptMessageObjectInvalidSignature = {
+				message: notSecretMessage,
+				signature: defaultTwoSignSignature.slice(0, 20),
+				publicKey: publicKey1,
+				secondPublicKey: publicKey2,
+			};
+			(verifyMessageWithTwoPublicKeys(
+				encryptMessageObjectInvalidSignature,
+			)).should.have.property('verification').be.false();
 		});
 
-		it('should throw on invalid secondary signature', () => {
+		it('should return false on invalid secondary signature', () => {
 			const msgBytes = naclInstance.encode_utf8(notSecretMessage);
 			const firstKeys = getRawPrivateAndPublicKeyFromSecret(defaultSecret);
 			const secondKeys = getRawPrivateAndPublicKeyFromSecret(defaultSecondSecret);
@@ -173,7 +232,15 @@ ${defaultSignature}
 			const doubleSignedMessage = bufferToHex(naclInstance.crypto_sign(
 				signedMessage, secondKeys.privateKey,
 			));
-			(verifyMessageWithTwoPublicKeys.bind(null, doubleSignedMessage, publicKey1, publicKey2)).should.throw('Invalid signature first publicKey, cannot verify message');
+			const encryptMessageObjectInvalidSecondSignature = {
+				message: notSecretMessage,
+				signature: doubleSignedMessage,
+				publicKey: publicKey1,
+				secondPublicKey: publicKey2,
+			};
+			(verifyMessageWithTwoPublicKeys(
+				encryptMessageObjectInvalidSecondSignature,
+			)).should.have.property('verification').be.false();
 		});
 	});
 
