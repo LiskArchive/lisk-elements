@@ -110,9 +110,7 @@ export function verifyMessageWithPublicKey({ signature, publicKey }) {
 
 /**
  * @method verifyMessageWithTwoPublicKeys
- * @param signedMessage
- * @param publicKey
- * @param secondPublicKey
+ * @param {Object} - message, signature, publicKey, secondPublicKey
  *
  * @return {Object}
  */
@@ -241,27 +239,42 @@ export function encryptMessageWithSecret(message, secret, recipientPublicKey) {
 
 /**
  * @method decryptMessageWithSecret
- * @param cipherHex
- * @param nonce
- * @param secret
- * @param senderPublicKey
+ * @param {Object} - encryptedMessage, nonce, senderPublicKey, secret
  *
- * @return {string}
+ * @return {String}
  */
 
-export function decryptMessageWithSecret({ encryptedMessage, nonce, secret, senderPublicKey }) {
-	const recipientPrivateKeyBytes = getRawPrivateAndPublicKeyFromSecret(secret).privateKey;
-	const convertedPrivateKey = convertPrivateKeyEd2Curve(recipientPrivateKeyBytes);
+export function decryptMessageWithSecret({ encryptedMessage, nonce, senderPublicKey, secret }) {
+	const { privateKey, publicKey } = getRawPrivateAndPublicKeyFromSecret(secret);
+	const convertedPrivateKey = convertPrivateKeyEd2Curve(privateKey);
 	const senderPublicKeyBytes = hexToBuffer(senderPublicKey);
 	const convertedPublicKey = convertPublicKeyEd2Curve(senderPublicKeyBytes);
 	const cipherBytes = hexToBuffer(encryptedMessage);
 	const nonceBytes = hexToBuffer(nonce);
+	let decoded;
+	try {
+		decoded = naclInstance.crypto_box_open(
+			cipherBytes, nonceBytes, convertedPublicKey, convertedPrivateKey,
+		);
+	} catch(e) {
+		if(e.message === 'nacl_raw._crypto_box_open signalled an error') {
+			return {
+				message: null,
+				encryptedMessage,
+				nonce,
+				senderPublicKey,
+				error: 'Could not open message, secret passphrase does not match',
+			}
+		}
+	}
 
-	const decoded = naclInstance.crypto_box_open(
-		cipherBytes, nonceBytes, convertedPublicKey, convertedPrivateKey,
-	);
-
-	return naclInstance.decode_utf8(decoded);
+	return {
+		message: naclInstance.decode_utf8(decoded),
+		encryptedMessage,
+		nonce,
+		senderPublicKey,
+		recipientPublicKey: bufferToHex(publicKey),
+	};
 }
 
 /**
@@ -269,7 +282,7 @@ export function decryptMessageWithSecret({ encryptedMessage, nonce, secret, send
  * @param transaction Object
  * @param secret Object
  *
- * @return {string}
+ * @return {String}
  */
 
 export function signTransaction(transaction, secret) {
@@ -284,7 +297,7 @@ export function signTransaction(transaction, secret) {
  * @param transaction Object
  * @param secret Object
  *
- * @return {string}
+ * @return {String}
  */
 
 export function multiSignTransaction(transaction, secret) {
@@ -306,7 +319,7 @@ export function multiSignTransaction(transaction, secret) {
  * @param transaction Object
  * @param secondPublicKey
  *
- * @return {boolean}
+ * @return {Boolean}
  */
 
 export function verifyTransaction(transaction, secondPublicKey) {
