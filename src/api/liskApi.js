@@ -22,6 +22,10 @@
  * - Connecting to Lisk peers or to localhost instance of Lisk core.
  * - Configurable network settings to work in different Lisk environments.
  *
+ * @example
+ *
+ *     var lisk = require('lisk-js');
+ *
  *     var options = {
  *         ssl: false,
  *         node: '',
@@ -33,11 +37,11 @@
  *         nethash: ''
  *     };
  *
- *     var lisk = require('lisk-js');
  *     var LSK = lisk.api(options);
  *
- * @class lisk.api()
- * @main lisk
+ * @param {Object} - Initialization Object for the LiskAPI instance.
+ * @returns {LiskAPI} - A new instance of LiskAPI
+ * @constructor
  */
 import privateApi from './privateApi';
 import { checkOptions, optionallyCallCallback, wrapSendRequest } from './utils';
@@ -71,12 +75,7 @@ function LiskAPI(providedOptions = {}) {
 
 	this.options = options;
 	this.ssl = options.ssl;
-	// Random peer can be set by settings with randomPeer: true | false
-	// Random peer is automatically enabled when no options.node has been entered. Else will be set
-	// to false.
-	// If the desired behaviour is to have an own node and automatic peer discovery, randomPeer
-	// should be set to true explicitly
-	this.randomPeer = (typeof options.randomPeer === 'boolean') ? options.randomPeer : !(options.node);
+	this.randomPeer = Boolean(options.randomPeer);
 	this.testnet = options.testnet;
 	this.bannedPeers = options.bannedPeers;
 	this.currentPeer = options.node || privateApi.selectNode.call(this);
