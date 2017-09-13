@@ -256,15 +256,15 @@ export function decryptMessageWithSecret({ encryptedMessage, nonce, senderPublic
 		decoded = naclInstance.crypto_box_open(
 			cipherBytes, nonceBytes, convertedPublicKey, convertedPrivateKey,
 		);
-	} catch(e) {
-		if(e.message === 'nacl_raw._crypto_box_open signalled an error') {
+	} catch (e) {
+		if (e.message === 'nacl_raw._crypto_box_open signalled an error') {
 			return {
 				message: null,
 				encryptedMessage,
 				nonce,
 				senderPublicKey,
 				error: 'Could not open message, secret passphrase does not match',
-			}
+			};
 		}
 	}
 
