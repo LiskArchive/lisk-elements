@@ -1,4 +1,4 @@
-Have you read Lisk-JS's Code of Conduct? By filing an Issue, you are expected to comply with it, including treating everyone with respect: https://github.com/lisk-js/master/CODE_OF_CONDUCT.md
+Have you read Lisk-JS's Code of Conduct? By filing an Issue, you are expected to comply with it, including treating everyone with respect: https://github.com/LiskHQ/lisk-js/blob/1.0.0/CODE_OF_CONDUCT.md
 
 ### Description
 
