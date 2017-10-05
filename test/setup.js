@@ -15,7 +15,6 @@
 import 'babel-polyfill';
 import should from 'should';
 import sinon from 'sinon';
-import naclFactory from 'js-nacl';
 
 process.env.NODE_ENV = 'test';
 
@@ -24,15 +23,14 @@ should.use((_, Assertion) => {
 		this.params = {
 			operator: 'to be hex string',
 		};
-		(Buffer.from(this.obj, 'hex').toString('hex'))
-			.should.equal(this.obj);
+		Buffer.from(this.obj, 'hex').toString('hex').should.equal(this.obj);
 	});
 
 	Assertion.add('integer', function integer() {
 		this.params = {
 			operator: 'to be an integer',
 		};
-		(parseInt(this.obj, 10)).should.equal(this.obj);
+		parseInt(this.obj, 10).should.equal(this.obj);
 	});
 });
 
@@ -40,7 +38,3 @@ should.use((_, Assertion) => {
 Object.defineProperty(global, 'should', { value: should });
 global.sinon = sinon;
 global.sandbox = sinon.sandbox.create();
-
-naclFactory.instantiate((nacl) => {
-	global.naclInstance = nacl;
-});
