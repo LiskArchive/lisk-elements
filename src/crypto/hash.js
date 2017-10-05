@@ -13,6 +13,12 @@
  *
  */
 import getTransactionBytes from './../transactions/transactionBytes';
+import { hexToBuffer, bufferToHex } from './convert';
+import shajs from 'sha.js';
+import nacl from 'tweetnacl';
+import naclUtil from 'tweetnacl-util';
+
+nacl.util = naclUtil;
 
 /**
  * @method getSha256Hash
@@ -30,13 +36,14 @@ export function getSha256Hash(data, format) {
 		if (!['utf8', 'hex'].includes(format)) {
 			throw new Error('Unsupported string format. Currently only `hex` and `utf8` are supported.');
 		}
-		const encoded = format === 'utf8'
-			? naclInstance.encode_utf8(data)
-			: naclInstance.from_hex(data);
+		const encoded =
+			format === 'utf8' ? naclInstance.encode_utf8(data) : naclInstance.from_hex(data);
 		return naclInstance.crypto_hash_sha256(encoded);
 	}
 
-	throw new Error('Unsupported data format. Currently only Buffers or `hex` and `utf8` strings are supported.');
+	throw new Error(
+		'Unsupported data format. Currently only Buffers or `hex` and `utf8` strings are supported.',
+	);
 }
 
 /**

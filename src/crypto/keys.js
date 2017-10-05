@@ -14,6 +14,7 @@
  */
 import { getSha256Hash } from './hash';
 import { bufferToHex, getAddress } from './convert';
+import nacl from 'tweetnacl';
 
 /**
  * @method getRawPrivateAndPublicKeyFromSecret
@@ -24,11 +25,10 @@ import { bufferToHex, getAddress } from './convert';
 
 export function getRawPrivateAndPublicKeyFromSecret(secret) {
 	const sha256Hash = getSha256Hash(secret, 'utf8');
-	const { signSk, signPk } = naclInstance.crypto_sign_seed_keypair(sha256Hash);
-
+	const { publicKey, secretKey } = nacl.sign.keyPair.fromSeed(sha256Hash);
 	return {
-		privateKey: signSk,
-		publicKey: signPk,
+		privateKey: secretKey,
+		publicKey,
 	};
 }
 

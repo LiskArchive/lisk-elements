@@ -25,7 +25,7 @@ import getTransactionBytes from '../transactions/transactionBytes';
  */
 
 export function bufferToHex(buffer) {
-	return naclInstance.to_hex(buffer);
+	return new Buffer(buffer).toString('hex');
 }
 
 /**
@@ -47,9 +47,7 @@ export function hexToBuffer(hex) {
  */
 
 export function getFirstEightBytesReversed(publicKeyBytes) {
-	return Buffer.from(publicKeyBytes)
-		.slice(0, 8)
-		.reverse();
+	return Buffer.from(publicKeyBytes).slice(0, 8).reverse();
 }
 
 /**
