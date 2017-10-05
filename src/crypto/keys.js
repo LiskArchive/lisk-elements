@@ -12,6 +12,8 @@
  * Removal or modification of this copyright notice is prohibited.
  *
  */
+
+import nacl from 'tweetnacl';
 import { getSha256Hash } from './hash';
 import { bufferToHex, getAddress } from './convert';
 
@@ -24,11 +26,10 @@ import { bufferToHex, getAddress } from './convert';
 
 export function getRawPrivateAndPublicKeyFromSecret(secret) {
 	const sha256Hash = getSha256Hash(secret, 'utf8');
-	const { signSk, signPk } = naclInstance.crypto_sign_seed_keypair(sha256Hash);
-
+	const { publicKey, secretKey } = nacl.sign.keyPair.fromSeed(sha256Hash);
 	return {
-		privateKey: signSk,
-		publicKey: signPk,
+		privateKey: secretKey,
+		publicKey,
 	};
 }
 
