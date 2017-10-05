@@ -12,6 +12,9 @@
  * Removal or modification of this copyright notice is prohibited.
  *
  */
+
+import nacl from 'tweetnacl';
+import naclUtil from 'tweetnacl-util';
 import crypto from 'crypto';
 import getTransactionBytes from '../transactions/transactionBytes';
 import {
@@ -22,8 +25,6 @@ import {
 } from './convert';
 import { getRawPrivateAndPublicKeyFromSecret } from './keys';
 import { getTransactionHash, getSha256Hash } from './hash';
-import nacl from 'tweetnacl';
-import naclUtil from 'tweetnacl-util';
 
 nacl.util = naclUtil;
 

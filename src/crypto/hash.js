@@ -12,11 +12,9 @@
  * Removal or modification of this copyright notice is prohibited.
  *
  */
-import getTransactionBytes from './../transactions/transactionBytes';
-import { hexToBuffer, bufferToHex } from './convert';
-import shajs from 'sha.js';
 import nacl from 'tweetnacl';
 import naclUtil from 'tweetnacl-util';
+import getTransactionBytes from './../transactions/transactionBytes';
 
 nacl.util = naclUtil;
 

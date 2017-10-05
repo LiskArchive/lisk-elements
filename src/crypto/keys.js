@@ -12,9 +12,10 @@
  * Removal or modification of this copyright notice is prohibited.
  *
  */
+
+import nacl from 'tweetnacl';
 import { getSha256Hash } from './hash';
 import { bufferToHex, getAddress } from './convert';
-import nacl from 'tweetnacl';
 
 /**
  * @method getRawPrivateAndPublicKeyFromSecret
