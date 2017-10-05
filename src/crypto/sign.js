@@ -28,6 +28,14 @@ import { getTransactionHash, getSha256Hash } from './hash';
 
 nacl.util = naclUtil;
 
+const signedMessageHeader = '-----BEGIN LISK SIGNED MESSAGE-----';
+const messageHeader = '-----MESSAGE-----';
+const publicKeyHeader = '-----PUBLIC KEY-----';
+const secondPublicKeyHeader = '-----SECOND PUBLIC KEY-----';
+const signatureHeader = '-----SIGNATURE-----';
+const secondSignatureHeader = '-----SECOND SIGNATURE-----';
+const signatureFooter = '-----END LISK SIGNED MESSAGE-----';
+
 /**
  * @method signMessageWithSecret
  * @param message - utf8
@@ -147,30 +155,31 @@ export function verifyMessageWithTwoPublicKeys({
 
 /**
  * @method printSignedMessage
- * @param message
- * @param signedMessage
- * @param publicKey
- *
+ * @param {object}
  * @return {string}
  */
 
-export function printSignedMessage({ message, signature, publicKey }) {
-	const signedMessageHeader = '-----BEGIN LISK SIGNED MESSAGE-----';
-	const messageHeader = '-----MESSAGE-----';
-	const publicKeyHeader = '-----PUBLIC KEY-----';
-	const signatureHeader = '-----SIGNATURE-----';
-	const signatureFooter = '-----END LISK SIGNED MESSAGE-----';
-
+export function printSignedMessage({
+	message,
+	signature,
+	publicKey,
+	secondSignature,
+	secondPublicKey,
+}) {
 	const outputArray = [
 		signedMessageHeader,
 		messageHeader,
 		message,
 		publicKeyHeader,
 		publicKey,
+		secondPublicKey ? secondPublicKeyHeader : null,
+		secondPublicKey,
 		signatureHeader,
 		signature,
+		secondSignature ? secondSignatureHeader : null,
+		secondSignature,
 		signatureFooter,
-	];
+	].filter(Boolean);
 
 	return outputArray.join('\n');
 }
@@ -179,12 +188,16 @@ export function printSignedMessage({ message, signature, publicKey }) {
  * @method signAndPrintMessage
  * @param message
  * @param secret
+ * @param secondSecret
  *
  * @return {string}
  */
 
-export function signAndPrintMessage(message, secret) {
-	const signedMessage = signMessageWithSecret(message, secret);
+export function signAndPrintMessage(message, secret, secondSecret) {
+	const signedMessage = secondSecret
+		? signMessageWithTwoSecrets(message, secret, secondSecret)
+		: signMessageWithSecret(message, secret);
+
 	return printSignedMessage(signedMessage);
 }
 
