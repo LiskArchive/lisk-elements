@@ -470,44 +470,46 @@ describe('Lisk API module', () => {
 		});
 	});
 
-	describe('#broadcastSignedTransaction', () => {
-		let transaction;
+	describe('#broadcastSignedTransactions', () => {
+		let transactions;
 		let requestObject;
 
 		beforeEach(() => {
-			transaction = {
-				key1: 'value1',
-				key2: 2,
-			};
+			transactions = [
+				{
+					key1: 'value1',
+					key2: 2,
+				},
+			];
 			requestObject = {
 				requestUrl: `${defaultUrl}/api/transactions`,
 				nethash: defaultNethash,
-				requestParams: { transaction },
+				requestParams: { transactions },
 			};
 		});
 
 		it('should use getFullURL to get the url', () => {
-			return LSK.broadcastSignedTransaction({}).then(() => {
+			return LSK.broadcastSignedTransactions({}).then(() => {
 				getFullURLStub.should.be.calledWithExactly(LSK);
 			});
 		});
 
 		it('should call sendRequestPromise with a prepared request object', () => {
-			return LSK.broadcastSignedTransaction(transaction).then(() => {
+			return LSK.broadcastSignedTransactions(transactions).then(() => {
 				sendRequestPromiseStub.should.be.calledOn(LSK);
 				sendRequestPromiseStub.should.be.calledWithExactly(POST, requestObject);
 			});
 		});
 
 		it('should resolve to the body of the result of sendRequestPromise', () => {
-			return LSK.broadcastSignedTransaction(transaction).then(result =>
+			return LSK.broadcastSignedTransactions(transactions).then(result =>
 				result.should.be.equal(defaultRequestPromiseResult.body),
 			);
 		});
 
 		it('should call the callback with the body of the result of sendRequestPromise', () => {
 			return new Promise(resolve => {
-				LSK.broadcastSignedTransaction({}, resolve);
+				LSK.broadcastSignedTransactions([], resolve);
 			}).then(result => {
 				result.should.be.equal(defaultRequestPromiseResult.body);
 			});
