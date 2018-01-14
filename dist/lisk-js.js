@@ -2053,29 +2053,49 @@ module.exports = {
 },{}],9:[function(require,module,exports){
 'use strict';
 
-var convert = require('./convert');
-var sign = require('./sign');
-var keys = require('./keys');
-var hash = require('./hash');
+var _require = require('./convert'),
+    bufferToHex = _require.bufferToHex,
+    hexToBuffer = _require.hexToBuffer,
+    useFirstEightBufferEntriesReversed = _require.useFirstEightBufferEntriesReversed;
+
+var _require2 = require('./sign'),
+    verifyMessageWithPublicKey = _require2.verifyMessageWithPublicKey,
+    signMessageWithSecret = _require2.signMessageWithSecret,
+    signAndPrintMessage = _require2.signAndPrintMessage,
+    printSignedMessage = _require2.printSignedMessage,
+    encryptMessageWithSecret = _require2.encryptMessageWithSecret,
+    decryptMessageWithSecret = _require2.decryptMessageWithSecret,
+    convertPublicKeyEd2Curve = _require2.convertPublicKeyEd2Curve,
+    convertPrivateKeyEd2Curve = _require2.convertPrivateKeyEd2Curve,
+    decryptPassphraseWithPassword = _require2.decryptPassphraseWithPassword,
+    encryptPassphraseWithPassword = _require2.encryptPassphraseWithPassword;
+
+var _require3 = require('./keys'),
+    getPrivateAndPublicKeyFromSecret = _require3.getPrivateAndPublicKeyFromSecret,
+    getRawPrivateAndPublicKeyFromSecret = _require3.getRawPrivateAndPublicKeyFromSecret,
+    getAddressFromPublicKey = _require3.getAddressFromPublicKey;
+
+var _require4 = require('./hash'),
+    getSha256Hash = _require4.getSha256Hash;
 
 module.exports = {
-	bufferToHex: convert.bufferToHex,
-	hexToBuffer: convert.hexToBuffer,
-	useFirstEightBufferEntriesReversed: convert.useFirstEightBufferEntriesReversed,
-	verifyMessageWithPublicKey: sign.verifyMessageWithPublicKey,
-	signMessageWithSecret: sign.signMessageWithSecret,
-	signAndPrintMessage: sign.signAndPrintMessage,
-	printSignedMessage: sign.printSignedMessage,
-	encryptMessageWithSecret: sign.encryptMessageWithSecret,
-	decryptMessageWithSecret: sign.decryptMessageWithSecret,
-	convertPublicKeyEd2Curve: sign.convertPublicKeyEd2Curve,
-	convertPrivateKeyEd2Curve: sign.convertPrivateKeyEd2Curve,
-	decryptPassphraseWithPassword: sign.decryptPassphraseWithPassword,
-	encryptPassphraseWithPassword: sign.encryptPassphraseWithPassword,
-	getPrivateAndPublicKeyFromSecret: keys.getPrivateAndPublicKeyFromSecret,
-	getRawPrivateAndPublicKeyFromSecret: keys.getRawPrivateAndPublicKeyFromSecret,
-	getAddressFromPublicKey: keys.getAddressFromPublicKey,
-	getSha256Hash: hash.getSha256Hash
+	bufferToHex: bufferToHex,
+	hexToBuffer: hexToBuffer,
+	useFirstEightBufferEntriesReversed: useFirstEightBufferEntriesReversed,
+	verifyMessageWithPublicKey: verifyMessageWithPublicKey,
+	signMessageWithSecret: signMessageWithSecret,
+	signAndPrintMessage: signAndPrintMessage,
+	printSignedMessage: printSignedMessage,
+	encryptMessageWithSecret: encryptMessageWithSecret,
+	decryptMessageWithSecret: decryptMessageWithSecret,
+	convertPublicKeyEd2Curve: convertPublicKeyEd2Curve,
+	convertPrivateKeyEd2Curve: convertPrivateKeyEd2Curve,
+	decryptPassphraseWithPassword: decryptPassphraseWithPassword,
+	encryptPassphraseWithPassword: encryptPassphraseWithPassword,
+	getPrivateAndPublicKeyFromSecret: getPrivateAndPublicKeyFromSecret,
+	getRawPrivateAndPublicKeyFromSecret: getRawPrivateAndPublicKeyFromSecret,
+	getAddressFromPublicKey: getAddressFromPublicKey,
+	getSha256Hash: getSha256Hash
 };
 
 },{"./convert":7,"./hash":8,"./keys":10,"./sign":11}],10:[function(require,module,exports){
@@ -2097,36 +2117,48 @@ module.exports = {
  */
 
 var Buffer = require('buffer/').Buffer;
-var bignum = require('browserify-bignum');
 
-var hash = require('./hash');
-var convert = require('./convert');
+var _require = require('browserify-bignum'),
+    fromBuffer = _require.fromBuffer;
+
+var _require2 = require('./hash'),
+    getSha256Hash = _require2.getSha256Hash;
+
+var _require3 = require('./convert'),
+    bufferToHex = _require3.bufferToHex,
+    useFirstEightBufferEntriesReversed = _require3.useFirstEightBufferEntriesReversed;
 
 function getPrivateAndPublicKeyFromSecret(secret) {
-	var sha256Hash = hash.getSha256Hash(secret, 'utf8');
-	var keypair = naclInstance.crypto_sign_seed_keypair(sha256Hash);
+	var sha256Hash = getSha256Hash(secret, 'utf8');
+
+	var _naclInstance$crypto_ = naclInstance.crypto_sign_seed_keypair(sha256Hash),
+	    signSk = _naclInstance$crypto_.signSk,
+	    signPk = _naclInstance$crypto_.signPk;
 
 	return {
-		privateKey: convert.bufferToHex(Buffer.from(keypair.signSk)),
-		publicKey: convert.bufferToHex(Buffer.from(keypair.signPk))
+		privateKey: bufferToHex(Buffer.from(signSk)),
+		publicKey: bufferToHex(Buffer.from(signPk))
 	};
 }
 
 function getRawPrivateAndPublicKeyFromSecret(secret) {
-	var sha256Hash = hash.getSha256Hash(secret, 'utf8');
-	var keypair = naclInstance.crypto_sign_seed_keypair(sha256Hash);
+	var sha256Hash = getSha256Hash(secret, 'utf8');
+
+	var _naclInstance$crypto_2 = naclInstance.crypto_sign_seed_keypair(sha256Hash),
+	    signSk = _naclInstance$crypto_2.signSk,
+	    signPk = _naclInstance$crypto_2.signPk;
 
 	return {
-		privateKey: keypair.signSk,
-		publicKey: keypair.signPk
+		privateKey: signSk,
+		publicKey: signPk
 	};
 }
 
 function getAddressFromPublicKey(publicKey) {
-	var publicKeyHash = hash.getSha256Hash(publicKey, 'hex');
+	var publicKeyHash = getSha256Hash(publicKey, 'hex');
 
-	var publicKeyTransform = convert.useFirstEightBufferEntriesReversed(publicKeyHash);
-	var address = bignum.fromBuffer(publicKeyTransform).toString() + 'L';
+	var publicKeyTransform = useFirstEightBufferEntriesReversed(publicKeyHash);
+	var address = fromBuffer(publicKeyTransform).toString() + 'L';
 
 	return address;
 }
@@ -2156,31 +2188,62 @@ module.exports = {
  * Removal or modification of this copyright notice is prohibited.
  *
  */
-var crypto = require('crypto');
+var _require = require('crypto'),
+    randomBytes = _require.randomBytes,
+    createCipheriv = _require.createCipheriv,
+    createDecipheriv = _require.createDecipheriv;
+
 var ed2curve = require('ed2curve');
-var convert = require('./convert');
-var keys = require('./keys');
-var hash = require('./hash');
+
+var _require2 = require('./convert'),
+    bufferToHex = _require2.bufferToHex,
+    hexToBuffer = _require2.hexToBuffer;
+
+var _require3 = require('./keys'),
+    getRawPrivateAndPublicKeyFromSecret = _require3.getRawPrivateAndPublicKeyFromSecret,
+    getPrivateAndPublicKeyFromSecret = _require3.getPrivateAndPublicKeyFromSecret;
+
+var _require4 = require('./hash'),
+    getSha256Hash = _require4.getSha256Hash;
+
+/**
+ * @method wrapWithSymbols
+ * @param {String} str - string to wrap
+ * @param {Number} signsNum int - number of symbols from each side
+ * @param {String} symbol - wrapper symbol to repeat
+ *
+ * @return {String} wrapped string
+ */
+
+function wrapWithSymbols(str) {
+	var signsNum = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 5;
+	var symbol = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '-';
+
+	var wrapPart = symbol.repeat(signsNum);
+	return wrapPart + str + wrapPart;
+}
 
 function signMessageWithSecret(message, secret) {
 	var msg = naclInstance.encode_utf8(message);
-	var keypair = keys.getRawPrivateAndPublicKeyFromSecret(secret);
 
-	var signedMessage = naclInstance.crypto_sign(msg, keypair.privateKey);
-	var hexSignedMessage = convert.bufferToHex(signedMessage);
+	var _getRawPrivateAndPubl = getRawPrivateAndPublicKeyFromSecret(secret),
+	    privateKey = _getRawPrivateAndPubl.privateKey;
+
+	var signedMessage = naclInstance.crypto_sign(msg, privateKey);
+	var hexSignedMessage = bufferToHex(signedMessage);
 
 	return hexSignedMessage;
 }
 
 function signAndPrintMessage(message, secret) {
-	var signedMessageHeader = '-----BEGIN LISK SIGNED MESSAGE-----';
-	var messageHeader = '-----MESSAGE-----';
+	var signedMessageHeader = wrapWithSymbols('BEGIN LISK SIGNED MESSAGE');
+	var messageHeader = wrapWithSymbols('MESSAGE');
 	var plainMessage = message;
-	var pubklicKeyHeader = '-----PUBLIC KEY-----';
-	var publicKey = keys.getPrivateAndPublicKeyFromSecret(secret).publicKey;
-	var signatureHeader = '-----SIGNATURE-----';
+	var pubklicKeyHeader = wrapWithSymbols('PUBLIC KEY');
+	var publicKey = getPrivateAndPublicKeyFromSecret(secret).publicKey;
+	var signatureHeader = wrapWithSymbols('SIGNATURE');
 	var signedMessage = signMessageWithSecret(message, secret);
-	var signatureFooter = '-----END LISK SIGNED MESSAGE-----';
+	var signatureFooter = wrapWithSymbols('END LISK SIGNED MESSAGE');
 
 	var outputArray = [signedMessageHeader, messageHeader, plainMessage, pubklicKeyHeader, publicKey, signatureHeader, signedMessage, signatureFooter];
 
@@ -2188,14 +2251,14 @@ function signAndPrintMessage(message, secret) {
 }
 
 function printSignedMessage(message, signedMessage, publicKey) {
-	var signedMessageHeader = '-----BEGIN LISK SIGNED MESSAGE-----';
-	var messageHeader = '-----MESSAGE-----';
+	var signedMessageHeader = wrapWithSymbols('BEGIN LISK SIGNED MESSAGE');
+	var messageHeader = wrapWithSymbols('MESSAGE');
 	var plainMessage = message;
-	var publicKeyHeader = '-----PUBLIC KEY-----';
+	var publicKeyHeader = wrapWithSymbols('PUBLIC KEY');
 	var printPublicKey = publicKey;
-	var signatureHeader = '-----SIGNATURE-----';
+	var signatureHeader = wrapWithSymbols('SIGNATURE');
 	var printSignedMessage = signedMessage;
-	var signatureFooter = '-----END LISK SIGNED MESSAGE-----';
+	var signatureFooter = wrapWithSymbols('END LISK SIGNED MESSAGE');
 
 	var outputArray = [signedMessageHeader, messageHeader, plainMessage, publicKeyHeader, printPublicKey, signatureHeader, printSignedMessage, signatureFooter];
 
@@ -2203,8 +2266,8 @@ function printSignedMessage(message, signedMessage, publicKey) {
 }
 
 function verifyMessageWithPublicKey(signedMessage, publicKey) {
-	var signedMessageBytes = convert.hexToBuffer(signedMessage);
-	var publicKeyBytes = convert.hexToBuffer(publicKey);
+	var signedMessageBytes = hexToBuffer(signedMessage);
+	var publicKeyBytes = hexToBuffer(publicKey);
 
 	if (publicKeyBytes.length !== 32) {
 		throw new Error('Invalid publicKey, expected 32-byte publicKey');
@@ -2230,15 +2293,15 @@ function convertPrivateKeyEd2Curve(privateKey) {
 }
 
 function encryptMessageWithSecret(message, secret, recipientPublicKey) {
-	var senderPrivateKey = keys.getRawPrivateAndPublicKeyFromSecret(secret).privateKey;
-	var recipientPublicKeyBytes = convert.hexToBuffer(recipientPublicKey);
-	var message = naclInstance.encode_utf8(message);
+	var senderPrivateKey = getRawPrivateAndPublicKeyFromSecret(secret).privateKey;
+	var recipientPublicKeyBytes = hexToBuffer(recipientPublicKey);
+	message = naclInstance.encode_utf8(message);
 
 	var nonce = naclInstance.crypto_box_random_nonce();
 	var packet = naclInstance.crypto_box(message, nonce, convertPublicKeyEd2Curve(recipientPublicKeyBytes), convertPrivateKeyEd2Curve(senderPrivateKey));
 
-	var nonceHex = convert.bufferToHex(nonce);
-	var encryptedMessage = convert.bufferToHex(packet);
+	var nonceHex = bufferToHex(nonce);
+	var encryptedMessage = bufferToHex(packet);
 
 	return {
 		nonce: nonceHex,
@@ -2247,10 +2310,10 @@ function encryptMessageWithSecret(message, secret, recipientPublicKey) {
 }
 
 function decryptMessageWithSecret(packet, nonce, secret, senderPublicKey) {
-	var recipientPrivateKey = keys.getRawPrivateAndPublicKeyFromSecret(secret).privateKey;
-	var senderPublicKeyBytes = convert.hexToBuffer(senderPublicKey);
-	var packetBytes = convert.hexToBuffer(packet);
-	var nonceBytes = convert.hexToBuffer(nonce);
+	var recipientPrivateKey = getRawPrivateAndPublicKeyFromSecret(secret).privateKey;
+	var senderPublicKeyBytes = hexToBuffer(senderPublicKey);
+	var packetBytes = hexToBuffer(packet);
+	var nonceBytes = hexToBuffer(nonce);
 
 	var decoded = naclInstance.crypto_box_open(packetBytes, nonceBytes, convertPublicKeyEd2Curve(senderPublicKeyBytes), convertPrivateKeyEd2Curve(recipientPrivateKey));
 
@@ -2266,9 +2329,9 @@ function decryptMessageWithSecret(packet, nonce, secret, senderPublicKey) {
  */
 
 function encryptAES256CBCWithPassword(plainText, password) {
-	var iv = crypto.randomBytes(16);
-	var passwordHash = hash.getSha256Hash(password, 'utf8');
-	var cipher = crypto.createCipheriv('aes-256-cbc', passwordHash, iv);
+	var iv = randomBytes(16);
+	var passwordHash = getSha256Hash(password, 'utf8');
+	var cipher = createCipheriv('aes-256-cbc', passwordHash, iv);
 	var firstBlock = cipher.update(plainText, 'utf8');
 	var encrypted = Buffer.concat([firstBlock, cipher.final()]);
 
@@ -2291,9 +2354,9 @@ function encryptAES256CBCWithPassword(plainText, password) {
 function decryptAES256CBCWithPassword(cipherAndIv, password) {
 	var cipher = cipherAndIv.cipher;
 	var iv = cipherAndIv.iv;
-	var passwordHash = hash.getSha256Hash(password, 'utf8');
-	var decipherInit = crypto.createDecipheriv('aes-256-cbc', passwordHash, convert.hexToBuffer(iv));
-	var firstBlock = decipherInit.update(convert.hexToBuffer(cipher));
+	var passwordHash = getSha256Hash(password, 'utf8');
+	var decipherInit = createDecipheriv('aes-256-cbc', passwordHash, hexToBuffer(iv));
+	var firstBlock = decipherInit.update(hexToBuffer(cipher));
 	var decrypted = Buffer.concat([firstBlock, decipherInit.final()]);
 
 	return decrypted.toString();
