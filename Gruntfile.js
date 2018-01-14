@@ -13,12 +13,12 @@ module.exports = function (grunt) {
 		pkg: grunt.file.readJSON('package.json'),
 
 		browserify: {
-			js: {
-				src: './index.js',
-				dest: './dist/lisk-js.js'
-			},
-			options: {
-				browserifyOptions: {
+			dist: {
+				files: {
+					'dist/lisk-js.js': ['index.js']
+				},
+				options: {
+					transform: [['babelify', {'presets': ['es2015']}]],
 					standalone: 'lisk'
 				}
 			}
@@ -69,11 +69,11 @@ module.exports = function (grunt) {
 	grunt.loadNpmTasks('grunt-coveralls');
 	grunt.registerTask('jenkins', ['exec:coverageSingle', 'coveralls']);
 	grunt.registerTask('eslint-ci', ['eslint']);
-	grunt.registerTask('default', [
+	grunt.registerTask('build', [
 		'force:on',
 		'browserify',
 		'eslint',
-		'uglify',
-		'watch'
-	]);
+		'uglify']
+	);
+	grunt.registerTask('default', ['build', 'watch']);
 };
