@@ -1438,7 +1438,17 @@ var fixedPoint = Math.pow(10, 8);
  * @return {object}
  */
 
-function getTransactionBytes(transaction) {
+function getTransactionBytes(_ref) {
+	var type = _ref.type,
+	    _ref$asset = _ref.asset,
+	    signature = _ref$asset.signature,
+	    delegate = _ref$asset.delegate,
+	    votes = _ref$asset.votes,
+	    multisignature = _ref$asset.multisignature,
+	    dapp = _ref$asset.dapp,
+	    inTransfer = _ref$asset.inTransfer,
+	    outTransfer = _ref$asset.outTransfer;
+
 
 	/**
   * @method isSendTransaction
@@ -1459,7 +1469,7 @@ function getTransactionBytes(transaction) {
 
 	function isSignatureTransaction() {
 		var bb = new ByteBuffer(32, true);
-		var publicKey = transaction.asset.signature.publicKey;
+		var publicKey = signature.publicKey;
 		var publicKeyBuffer = Buffer.from(publicKey, 'hex');
 
 		for (var i = 0; i < publicKeyBuffer.length; i++) {
@@ -1482,8 +1492,8 @@ function getTransactionBytes(transaction) {
 
 	function isDelegateTransaction() {
 		return {
-			assetBytes: Buffer.from(transaction.asset.delegate.username),
-			assetSize: Buffer.from(transaction.asset.delegate.username).length
+			assetBytes: Buffer.from(delegate.username),
+			assetSize: Buffer.from(delegate.username).length
 		};
 	}
 
@@ -1493,7 +1503,7 @@ function getTransactionBytes(transaction) {
   */
 
 	function isVoteTransaction() {
-		var voteTransactionBytes = Buffer.from(transaction.asset.votes.join('')) || null;
+		var voteTransactionBytes = Buffer.from(votes.join('')) || null;
 
 		return {
 			assetBytes: voteTransactionBytes,
@@ -1509,11 +1519,11 @@ function getTransactionBytes(transaction) {
 	function isMultisignatureTransaction() {
 		var MINSIGNATURES = 1;
 		var LIFETIME = 1;
-		var keysgroupBuffer = Buffer.from(transaction.asset.multisignature.keysgroup.join(''), 'utf8');
+		var keysgroupBuffer = Buffer.from(multisignature.keysgroup.join(''), 'utf8');
 
 		var bb = new ByteBuffer(MINSIGNATURES + LIFETIME + keysgroupBuffer.length, true);
-		bb.writeByte(transaction.asset.multisignature.min);
-		bb.writeByte(transaction.asset.multisignature.lifetime);
+		bb.writeByte(multisignature.min);
+		bb.writeByte(multisignature.lifetime);
 		for (var i = 0; i < keysgroupBuffer.length; i++) {
 			bb.writeByte(keysgroupBuffer[i]);
 		}
@@ -1534,7 +1544,6 @@ function getTransactionBytes(transaction) {
   */
 
 	function isDappTransaction() {
-		var dapp = transaction.asset.dapp;
 		var buf = new Buffer([]);
 		var nameBuf = Buffer.from(dapp.name);
 		buf = Buffer.concat([buf, nameBuf]);
@@ -1576,7 +1585,7 @@ function getTransactionBytes(transaction) {
   */
 
 	function isDappInTransferTransaction() {
-		var buf = Buffer.from(transaction.asset.inTransfer.dappId);
+		var buf = Buffer.from(inTransfer.dappId);
 
 		return {
 			assetBytes: buf,
@@ -1590,8 +1599,8 @@ function getTransactionBytes(transaction) {
   */
 
 	function isDappOutTransferTransaction() {
-		var dappBuf = Buffer.from(transaction.asset.outTransfer.dappId);
-		var transactionBuf = Buffer.from(transaction.asset.outTransfer.transactionId);
+		var dappBuf = Buffer.from(outTransfer.dappId);
+		var transactionBuf = Buffer.from(outTransfer.transactionId);
 		var buf = Buffer.concat([dappBuf, transactionBuf]);
 
 		return {
@@ -1618,7 +1627,7 @@ function getTransactionBytes(transaction) {
 		'7': isDappOutTransferTransaction
 	};
 
-	return transactionType[transaction.type]();
+	return transactionType[type]();
 }
 
 /**
@@ -1691,15 +1700,15 @@ function createTransactionBuffer(transaction, options) {
 				transactionBuffer.writeByte(recipient[i] || 0);
 			}
 		} else {
-			for (var i = 0; i < 8; i++) {
+			for (var _i = 0; _i < 8; _i++) {
 				transactionBuffer.writeByte(0);
 			}
 		}
 		transactionBuffer.writeLong(transaction.amount);
 
 		if (assetSize > 0) {
-			for (var i = 0; i < assetSize; i++) {
-				transactionBuffer.writeByte(assetBytes[i]);
+			for (var _i2 = 0; _i2 < assetSize; _i2++) {
+				transactionBuffer.writeByte(assetBytes[_i2]);
 			}
 		}
 
@@ -1717,17 +1726,18 @@ function createTransactionBuffer(transaction, options) {
 		var arrayBuffer = new Uint8Array(transactionBuffer.toArrayBuffer());
 		var buffer = [];
 
-		for (var i = 0; i < arrayBuffer.length; i++) {
-			buffer[i] = arrayBuffer[i];
+		for (var _i3 = 0; _i3 < arrayBuffer.length; _i3++) {
+			buffer[_i3] = arrayBuffer[_i3];
 		}
 
 		return Buffer.from(buffer);
 	}
 
 	// Get Transaction Size and Bytes
-	var transactionAssetSizeBuffer = getTransactionBytes(transaction);
-	var assetSize = transactionAssetSizeBuffer.assetSize;
-	var assetBytes = transactionAssetSizeBuffer.assetBytes;
+
+	var _getTransactionBytes = getTransactionBytes(transaction),
+	    assetSize = _getTransactionBytes.assetSize,
+	    assetBytes = _getTransactionBytes.assetBytes;
 
 	var emptyTransactionBuffer = createEmptyTransactionBuffer(assetSize);
 	var assignedTransactionBuffer = assignTransactionBuffer(emptyTransactionBuffer, assetSize, assetBytes);
@@ -2719,10 +2729,11 @@ var slots = require('../time/slots.js');
  */
 
 function newSignature(secondSecret) {
-  var keys = crypto.getKeys(secondSecret);
+  var _crypto$getKeys = crypto.getKeys(secondSecret),
+      publicKey = _crypto$getKeys.publicKey;
 
   var signature = {
-    publicKey: keys.publicKey
+    publicKey: publicKey
   };
 
   return signature;
