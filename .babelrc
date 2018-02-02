@@ -1,0 +1,8 @@
+{
+  "presets": ["flow"],
+	"env": {
+		"test": {
+			"plugins": [ "istanbul" ]
+		}
+  }
+}

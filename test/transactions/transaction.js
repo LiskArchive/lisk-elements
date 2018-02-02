@@ -1,6 +1,6 @@
 
 if (typeof module !== 'undefined' && module.exports) {
-	var slots = require('../../lib/time/slots');
+	var slots = require('../../src/time/slots');
 	var common = require('../common');
 	var lisk = common.lisk;
 }

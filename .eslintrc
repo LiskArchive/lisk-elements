@@ -1,4 +1,8 @@
 {
+  "parser": "babel-eslint",
+  "plugins": [
+    "flowtype"
+  ],
   "parserOptions": {
     "ecmaVersion": 5,
     "sourceType": "module",
@@ -7,6 +11,7 @@
     }
   },
   "rules": {
+    "flowtype/define-flow-type": 2,
     "camelcase": ["error", { "properties": "always" }],
     "eqeqeq": ["error", "always"],
     "no-eq-null": "error",

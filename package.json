@@ -2,9 +2,10 @@
   "name": "lisk-js",
   "version": "0.5.0",
   "description": "JavaScript library for sending Lisk transactions from the client or server",
-  "main": "index.js",
+  "main": "lib/index.js",
   "scripts": {
-    "test": "nyc mocha",
+    "test": "nyc mocha --require babel-register",
+    "flow": "flow",
     "jenkins": "./node_modules/.bin/grunt jenkins --verbose"
   },
   "repository": {
@@ -23,10 +24,19 @@
     "popsicle": "=9.1.0"
   },
   "devDependencies": {
+    "babel-cli": "=6.26.0",
+    "babel-eslint": "=8.2.1",
+    "babel-plugin-istanbul": "=4.1.5",
+    "babel-preset-flow": "=6.23.0",
+    "babel-register": "=6.26.0",
     "chai": "=4.0.0",
     "chai-http": "=3.0.0",
     "coveralls": "=2.13.1",
+    "eslint": "=4.16.0",
+    "eslint-plugin-flowtype": "=2.42.0",
+    "flow-bin": "=0.64.0",
     "grunt": "=1.0.1",
+    "grunt-babel": "=7.0.0",
     "grunt-browserify": "=5.0.0",
     "grunt-contrib-nodeunit": "=1.0.0",
     "grunt-contrib-uglify": "=3.0.1",

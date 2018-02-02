@@ -13,7 +13,7 @@ global.sinon = require('sinon');
 
 process.env.NODE_ENV = 'test';
 
-var lisk = require('../index.js');
+var lisk = require('../src/index.js');
 
 exports.lisk = lisk;
 exports.cryptoLib = cryptoLib;

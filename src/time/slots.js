@@ -1,3 +1,4 @@
+// @flow
 /*
  * Copyright © 2017 Lisk Foundation
  *
@@ -20,7 +21,8 @@
  * @return Date UTC 04/24/2016 5:00 pm
  */
 
-function beginEpochTime () {
+
+function beginEpochTime (): Date {
 	return new Date(Date.UTC(2016, 4, 24, 17, 0, 0, 0));
 }
 
@@ -30,8 +32,8 @@ function beginEpochTime () {
  * @return {number} (time - beginEpochTime) in seconds
  */
 
-function getEpochTime (time) {
-	if (time === undefined) {
+function getEpochTime (time: ?number): number {
+	if (time === undefined || time === null) {
 		time = (new Date()).getTime();
 	}
 	var d = beginEpochTime();
@@ -64,7 +66,7 @@ var interval = 10,
  * @return {number}
  */
 
-function getTime (time) {
+function getTime (time: ?number): number {
 	return getEpochTime(time);
 }
 
@@ -74,7 +76,7 @@ function getTime (time) {
  * @return {number}
  */
 
-function getRealTime (epochTime) {
+function getRealTime (epochTime: number) {
 	if (epochTime === undefined) {
 		epochTime = getTime();
 	}
@@ -89,8 +91,8 @@ function getRealTime (epochTime) {
  * @return {number}
  */
 
-function getSlotNumber (epochTime) {
-	if (epochTime === undefined) {
+function getSlotNumber (epochTime: ?number): number {
+	if (epochTime === undefined || epochTime === null) {
 		epochTime = getTime();
 	}
 
@@ -103,7 +105,8 @@ function getSlotNumber (epochTime) {
  * @return {number}
  */
 
-function getSlotTime (slot) {
+function getSlotTime (slot: ?number) {
+	slot = slot || 0;
 	return slot * interval;
 }
 
@@ -123,7 +126,7 @@ function getNextSlot () {
  * @return {number}
  */
 
-function getLastSlot (nextSlot) {
+function getLastSlot (nextSlot: number) {
 	return nextSlot + delegates;
 }
 

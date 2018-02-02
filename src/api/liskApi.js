@@ -1,3 +1,4 @@
+// @flow
 /*
  * Copyright © 2017 Lisk Foundation
  *
@@ -38,13 +39,13 @@
  * @main lisk
  */
 
+var popsicle = require('popsicle');
 var LiskJS = {};
 LiskJS.crypto = require('../transactions/crypto');
 var parseOfflineRequest = require('./parseTransaction');
 
-var popsicle = require('popsicle');
 
-function LiskAPI (options) {
+function LiskAPI (options: Options) {
 	if (!(this instanceof LiskAPI)) {
 		return new LiskAPI(options);
 	}
@@ -87,7 +88,7 @@ function LiskAPI (options) {
  * @return {object}
  */
 
-LiskAPI.prototype.netHashOptions = function () {
+LiskAPI.prototype.netHashOptions = function (): NethashOptions {
 	return {
 		testnet: {
 			'Content-Type': 'application/json',
@@ -115,7 +116,7 @@ LiskAPI.prototype.netHashOptions = function () {
  * @return {object}
  */
 
-LiskAPI.prototype.getNethash = function (providedNethash) {
+LiskAPI.prototype.getNethash = function (providedNethash: string): NethashOption {
 	var NetHash = (this.testnet) ? this.netHashOptions().testnet : this.netHashOptions().mainnet;
 
 	if (providedNethash) {
@@ -145,7 +146,7 @@ LiskAPI.prototype.listPeers = function () {
  * @return {object}
  */
 
-LiskAPI.prototype.setNode = function (node) {
+LiskAPI.prototype.setNode = function (node: string): string {
 	this.currentPeer = node || this.selectNode();
 	return this.currentPeer;
 };
@@ -155,7 +156,7 @@ LiskAPI.prototype.setNode = function (node) {
  * @param testnet boolean
  */
 
-LiskAPI.prototype.setTestnet = function (testnet) {
+LiskAPI.prototype.setTestnet = function (testnet: boolean) {
 	if (this.testnet !== testnet) {
 		this.testnet = testnet;
 		this.bannedPeers = [];
@@ -174,7 +175,7 @@ LiskAPI.prototype.setTestnet = function (testnet) {
  * @param ssl boolean
  */
 
-LiskAPI.prototype.setSSL = function (ssl) {
+LiskAPI.prototype.setSSL = function (ssl: boolean) {
 	if (this.ssl !== ssl) {
 		this.ssl = ssl;
 		this.bannedPeers = [];
@@ -187,7 +188,7 @@ LiskAPI.prototype.setSSL = function (ssl) {
  * @return url string
  */
 
-LiskAPI.prototype.getFullUrl = function () {
+LiskAPI.prototype.getFullUrl = function (): string {
 	var nodeUrl = this.currentPeer;
 
 	if (this.port) {
@@ -202,7 +203,7 @@ LiskAPI.prototype.getFullUrl = function () {
  * @return prefix string
  */
 
-LiskAPI.prototype.getURLPrefix = function () {
+LiskAPI.prototype.getURLPrefix = function (): string {
 	if (this.ssl) {
 		return 'https';
 	} else {
@@ -215,8 +216,8 @@ LiskAPI.prototype.getURLPrefix = function () {
  * @return peer string
  */
 
-LiskAPI.prototype.selectNode = function () {
-	var currentRandomPeer;
+LiskAPI.prototype.selectNode = function (): string {
+	var currentRandomPeer = '';
 
 	if (this.options.node) {
 		currentRandomPeer = this.currentPeer;
@@ -241,7 +242,7 @@ LiskAPI.prototype.selectNode = function () {
  * @return peer string
  */
 
-LiskAPI.prototype.getRandomPeer = function () {
+LiskAPI.prototype.getRandomPeer = function (): string {
 	var peers = (this.ssl) ? this.defaultSSLPeers : this.defaultPeers;
 	if (this.testnet) peers = this.defaultTestnetPeers;
 
@@ -263,7 +264,7 @@ LiskAPI.prototype.banNode = function () {
  * @return reDial boolean
  */
 
-LiskAPI.prototype.checkReDial = function () {
+LiskAPI.prototype.checkReDial = function (): boolean {
 	var peers = (this.ssl) ? this.defaultSSLPeers : this.defaultPeers;
 	if (this.testnet) peers = this.defaultTestnetPeers;
 

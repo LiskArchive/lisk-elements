@@ -52,7 +52,7 @@ function ParseOfflineRequest (requestType, options) {
  * @return string
  */
 
-ParseOfflineRequest.prototype.checkDoubleNamedAPI = function (requestType, options) {
+ParseOfflineRequest.prototype.checkDoubleNamedAPI = function (requestType: string, options): string {
 	if (requestType === 'transactions' || requestType === 'accounts/delegates') {
 		if (options && !options.hasOwnProperty('secret')) {
 			requestType = 'getTransactions';
@@ -68,7 +68,7 @@ ParseOfflineRequest.prototype.checkDoubleNamedAPI = function (requestType, optio
  * @return string
  */
 
-ParseOfflineRequest.prototype.httpGETPUTorPOST = function (requestType) {
+ParseOfflineRequest.prototype.httpGETPUTorPOST = function (requestType: string): string {
 	requestType = this.checkDoubleNamedAPI(requestType, this.options);
 
 	var requestMethod;
