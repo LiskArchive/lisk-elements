@@ -1,5 +1,5 @@
 {
-	"presets": ["env"],
+	"presets": ["env", "flow"],
 	"plugins": [
 		"transform-runtime",
 		["module-resolver", {

@@ -1,0 +1,10 @@
+[include]
+
+[ignore]
+.*/node_modules/cypress/dist/*
+
+[libs]
+flow/
+
+[version]
+^0.65.0

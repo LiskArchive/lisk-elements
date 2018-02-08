@@ -11,22 +11,24 @@
  *
  * Removal or modification of this copyright notice is prohibited.
  *
+ * @flow
+ *
  */
 import * as popsicle from 'popsicle';
 import { GET } from 'constants';
 import * as utils from './utils';
 
-export function getNodes() {
+export function getNodes(): Array<string> {
 	if (this.testnet) return this.defaultTestnetNodes;
 	if (this.ssl) return this.defaultSSLNodes;
 	return this.defaultNodes;
 }
 
-export function isBanned(node) {
+export function isBanned(node: string): boolean {
 	return this.bannedNodes.includes(node);
 }
 
-export function getRandomNode() {
+export function getRandomNode(): string {
 	const nodes = getNodes.call(this).filter(node => !isBanned.call(this, node));
 
 	if (!nodes.length) {
@@ -39,7 +41,7 @@ export function getRandomNode() {
 	return nodes[randomIndex];
 }
 
-export function selectNewNode() {
+export function selectNewNode(): string {
 	const providedNode = this.options.node;
 
 	if (this.randomNode) {
@@ -58,7 +60,7 @@ export function selectNewNode() {
 	);
 }
 
-export function banActiveNode() {
+export function banActiveNode(): boolean {
 	if (!isBanned.call(this, this.node)) {
 		this.bannedNodes.push(this.node);
 		return true;
@@ -66,7 +68,7 @@ export function banActiveNode() {
 	return false;
 }
 
-export function hasAvailableNodes() {
+export function hasAvailableNodes(): boolean {
 	const nodes = getNodes.call(this);
 
 	return this.randomNode
@@ -74,7 +76,11 @@ export function hasAvailableNodes() {
 		: false;
 }
 
-export function createRequestObject(method, requestType, providedOptions) {
+export function createRequestObject(
+	method: string,
+	requestType: string,
+	providedOptions: Object | Array<Object>,
+) {
 	const options = providedOptions || {};
 	const baseURL = utils.getFullURL(this);
 	const url =
@@ -90,7 +96,11 @@ export function createRequestObject(method, requestType, providedOptions) {
 	};
 }
 
-export function sendRequestPromise(requestMethod, requestType, options) {
+export function sendRequestPromise(
+	requestMethod: string,
+	requestType: string,
+	options: Object | Array<Object>,
+) {
 	const requestObject = createRequestObject.call(
 		this,
 		requestMethod,
@@ -104,11 +114,11 @@ export function sendRequestPromise(requestMethod, requestType, options) {
 }
 
 export function handleTimestampIsInFutureFailures(
-	requestMethod,
-	requestType,
-	options,
-	result,
-) {
+	requestMethod: string,
+	requestType: string,
+	options: any,
+	result: Object,
+): Promise<*> {
 	if (
 		!result.success &&
 		result.message &&
@@ -125,11 +135,11 @@ export function handleTimestampIsInFutureFailures(
 }
 
 export function handleSendRequestFailures(
-	requestMethod,
-	requestType,
-	options,
-	error,
-) {
+	requestMethod: string,
+	requestType: string,
+	options: Object | Array<Object>,
+	error: Error,
+): Promise<*> {
 	const that = this;
 	if (hasAvailableNodes.call(that)) {
 		return new Promise((resolve, reject) => {

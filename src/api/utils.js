@@ -11,16 +11,17 @@
  *
  * Removal or modification of this copyright notice is prohibited.
  *
+ * @flow
  */
 import { LIVE_PORT, SSL_PORT, TEST_PORT } from 'constants';
 
-export const getDefaultPort = options => {
+export const getDefaultPort = (options: Options): string => {
 	if (options.testnet) return TEST_PORT;
 	if (options.ssl) return SSL_PORT;
 	return LIVE_PORT;
 };
 
-export const netHashOptions = ({ port }) => {
+export const netHashOptions = ({ port }: Object): NethashOptions => {
 	const testnetNethash =
 		'da3ed6a45429278bac2666961289ca17ad86595d33b31037615d4b8e8f158bba';
 	const mainnetNethash =
@@ -47,36 +48,49 @@ export const netHashOptions = ({ port }) => {
 	};
 };
 
-export const getURLPrefix = ({ ssl }) => (ssl ? 'https' : 'http');
+export const getURLPrefix = ({ ssl }: { ssl: boolean }): string =>
+	ssl ? 'https' : 'http';
 
-export const getFullURL = ({ node, port, ssl }) => {
+export const getFullURL = ({
+	node,
+	port,
+	ssl,
+}: {
+	node: string,
+	port: string,
+	ssl: boolean,
+}): string => {
 	const nodeUrl = port ? `${node}:${port}` : node;
 	return `${getURLPrefix({ ssl })}://${nodeUrl}`;
 };
 
-export const wrapSendRequest = (method, endpoint, getDataFn) =>
-	function wrappedSendRequest(value, options) {
+export const wrapSendRequest = (
+	method: string,
+	endpoint: string,
+	getDataFn: Function,
+) =>
+	function wrappedSendRequest(value: string, options: Object) {
 		const providedOptions = options || {};
 		const providedData = getDataFn(value, providedOptions);
 		const data = Object.assign({}, providedData, providedOptions);
 		return this.sendRequest(method, endpoint, data);
 	};
 
-export const checkOptions = (options = {}) => {
-	Object.entries(options).forEach(([key, value]) => {
+export const checkOptions = (options: Object | Array<Object> = {}) => {
+	Object.entries(options).forEach(([key: string, value: number]) => {
 		if (value === undefined || Number.isNaN(value)) {
-			throw new Error(`"${key}" option should not be ${value}`);
+			throw new Error(`"${key}" option should not be ${String(value)}`);
 		}
 	});
 
 	return options;
 };
 
-export const toQueryString = obj => {
+export const toQueryString = (obj: Object | Array<Object>): string => {
 	const parts = Object.entries(obj).reduce(
-		(accumulator, [key, value]) => [
+		(accumulator, [key: string, value: mixed]) => [
 			...accumulator,
-			`${encodeURIComponent(key)}=${encodeURIComponent(value)}`,
+			`${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`,
 		],
 		[],
 	);

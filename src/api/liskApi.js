@@ -11,6 +11,8 @@
  *
  * Removal or modification of this copyright notice is prohibited.
  *
+ * @flow
+ *
  */
 import { LIVE_PORT, TEST_PORT, GET, POST } from 'constants';
 import config from '../../config.json';
@@ -18,7 +20,7 @@ import * as privateApi from './privateApi';
 import * as utils from './utils';
 
 export default class LiskAPI {
-	constructor(providedOptions) {
+	constructor(providedOptions: Options) {
 		const options = Object.assign({}, config.options, providedOptions);
 
 		this.defaultNodes = options.nodes || config.nodes.mainnet;
@@ -40,7 +42,35 @@ export default class LiskAPI {
 		this.nethash = this.getNethash(options.nethash);
 	}
 
-	getNethash(providedNethash) {
+	defaultNodes: Array<string>;
+	defaultSSLNodes: Array<string>;
+	defaultTestnetNodes: Array<string>;
+	options: Options;
+	ssl: boolean;
+	randomNode: boolean;
+	testnet: boolean;
+	bannedNodes: Array<string>;
+	node: string;
+	port: string;
+	nethash: NethashOption;
+
+	getAccount: Function;
+	getActiveDelegates: Function;
+	getStandbyDelegates: Function;
+	searchDelegatesByUsername: Function;
+	getBlocks: Function;
+	getForgedBlocks: Function;
+	getBlock: Function;
+	getTransactions: Function;
+	getTransaction: Function;
+	getVotes: Function;
+	getVoters: Function;
+	getUnsignedMultisignatureTransactions: Function;
+	getDapp: Function;
+	getDapps: Function;
+	getDappsByCategory: Function;
+
+	getNethash(providedNethash: string): NethashOption {
 		const { port } = this;
 		const NetHash = this.testnet
 			? utils.netHashOptions({ port }).testnet
@@ -65,12 +95,12 @@ export default class LiskAPI {
 		};
 	}
 
-	setNode(node) {
+	setNode(node: string) {
 		this.node = node || privateApi.selectNewNode.call(this);
 		return this.node;
 	}
 
-	setTestnet(testnet) {
+	setTestnet(testnet: boolean) {
 		if (this.testnet !== testnet) {
 			this.bannedNodes = [];
 		}
@@ -80,7 +110,7 @@ export default class LiskAPI {
 		privateApi.selectNewNode.call(this);
 	}
 
-	setSSL(ssl) {
+	setSSL(ssl: boolean) {
 		if (this.ssl !== ssl) {
 			this.ssl = ssl;
 			this.bannedNodes = [];
@@ -88,23 +118,27 @@ export default class LiskAPI {
 		}
 	}
 
-	broadcastTransactions(transactions) {
+	broadcastTransactions(transactions: Array<Object>) {
 		return privateApi.sendRequestPromise
 			.call(this, POST, 'transactions', transactions)
 			.then(result => result.body);
 	}
 
-	broadcastTransaction(transaction) {
+	broadcastTransaction(transaction: Object) {
 		return this.broadcastTransactions([transaction]);
 	}
 
-	broadcastSignatures(signatures) {
+	broadcastSignatures(signatures: Object) {
 		return privateApi.sendRequestPromise
 			.call(this, POST, 'signatures', { signatures })
 			.then(result => result.body);
 	}
 
-	sendRequest(requestMethod, requestType, options) {
+	sendRequest(
+		requestMethod: string,
+		requestType: string,
+		options: Object | Array<Object>,
+	) {
 		const checkedOptions = utils.checkOptions(options);
 
 		return privateApi.sendRequestPromise
@@ -128,7 +162,12 @@ export default class LiskAPI {
 			);
 	}
 
-	transferLSK(recipientId, amount, passphrase, secondPassphrase) {
+	transferLSK(
+		recipientId: string,
+		amount: number,
+		passphrase: string,
+		secondPassphrase: string,
+	) {
 		return this.sendRequest(POST, 'transactions', {
 			recipientId,
 			amount,
