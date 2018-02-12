@@ -27,39 +27,39 @@ import {
 describe('transaction utils', () => {
 	describe('exports', () => {
 		it('should have getTimeFromBlockchainEpoch', () => {
-			return getTimeFromBlockchainEpoch.should.be.a('function');
+			return getTimeFromBlockchainEpoch.should.be.type('function');
 		});
 
 		it('should have getTimeWithOffset', () => {
-			return getTimeWithOffset.should.be.a('function');
+			return getTimeWithOffset.should.be.type('function');
 		});
 
 		it('should have getTransactionBytes', () => {
-			return getTransactionBytes.should.be.a('function');
+			return getTransactionBytes.should.be.type('function');
 		});
 
 		it('should have getTransactionHash', () => {
-			return getTransactionHash.should.be.a('function');
+			return getTransactionHash.should.be.type('function');
 		});
 
 		it('should have getTransactionId', () => {
-			return getTransactionId.should.be.a('function');
+			return getTransactionId.should.be.type('function');
 		});
 
 		it('should have prepareTransaction', () => {
-			return prepareTransaction.should.be.a('function');
+			return prepareTransaction.should.be.type('function');
 		});
 
 		it('should have signTransaction', () => {
-			return signTransaction.should.be.a('function');
+			return signTransaction.should.be.type('function');
 		});
 
 		it('should have multiSignTransaction', () => {
-			return multiSignTransaction.should.be.a('function');
+			return multiSignTransaction.should.be.type('function');
 		});
 
 		it('should have verifyTransaction', () => {
-			return verifyTransaction.should.be.a('function');
+			return verifyTransaction.should.be.type('function');
 		});
 	});
 });

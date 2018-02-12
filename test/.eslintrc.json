@@ -8,7 +8,6 @@
 		"sinon": true
 	},
 	"rules": {
-		"arrow-body-style": "off",
-		"no-unused-expressions": "off"
+		"arrow-body-style": "off"
 	}
 }
