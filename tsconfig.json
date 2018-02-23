@@ -1,0 +1,12 @@
+{
+	"compilerOptions": {
+		"outDir": "./dist-node/cryptography",
+		"allowJs": true,
+		"target": "es5",
+		"moduleResolution": "node"
+	},
+	"include": [
+		"./src/cryptography/*",
+		"./global.d.ts"
+	]
+}

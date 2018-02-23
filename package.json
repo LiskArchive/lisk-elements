@@ -23,6 +23,7 @@
 		"prepublishOnly": "npm run prepush && npm run build",
 		"prepublish:browser": "npm run prepublishOnly",
 		"publish:browser": "./bin/publish_browser.sh",
+		"tsc": "tsc",
 		"postpublish": "npm run publish:browser"
 	},
 	"repository": {
@@ -40,6 +41,7 @@
 		"popsicle": "=9.1.0"
 	},
 	"devDependencies": {
+		"@types/node": "=9.4.6",
 		"babel-cli": "=6.24.1",
 		"babel-plugin-istanbul": "=4.1.4",
 		"babel-plugin-module-resolver": "=3.0.0",
@@ -69,6 +71,8 @@
 		"rewireify": "=0.2.5",
 		"should": "=11.2.1",
 		"should-sinon": "=0.0.6",
-		"sinon": "=2.2.0"
+		"sinon": "=2.2.0",
+		"ts-loader": "=3.5.0",
+		"typescript": "=2.7.2"
 	}
 }

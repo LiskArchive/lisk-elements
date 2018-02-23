@@ -1,3 +1,5 @@
+"use strict";
+exports.__esModule = true;
 /*
  * Copyright © 2017 Lisk Foundation
  *
@@ -12,38 +14,29 @@
  * Removal or modification of this copyright notice is prohibited.
  *
  */
-import bignum from 'browserify-bignum';
-import ed2curve from 'ed2curve';
-import hash from './hash';
-
-export const bigNumberToBuffer = (bignumber, size) =>
-	bignum(bignumber).toBuffer({ size });
-
-export const bufferToBigNumberString = bigNumberBuffer =>
-	bignum.fromBuffer(bigNumberBuffer).toString();
-
-export const bufferToHex = buffer => naclInstance.to_hex(buffer);
-
-export const hexToBuffer = hex => Buffer.from(hex, 'hex');
-
-export const getFirstEightBytesReversed = publicKeyBytes =>
-	Buffer.from(publicKeyBytes)
-		.slice(0, 8)
-		.reverse();
-
-export const toAddress = buffer => `${bufferToBigNumberString(buffer)}L`;
-
-export const getAddressFromPublicKey = publicKey => {
-	const publicKeyHash = hash(publicKey, 'hex');
-
-	const publicKeyTransform = getFirstEightBytesReversed(publicKeyHash);
-	const address = toAddress(publicKeyTransform);
-
-	return address;
+var browserify_bignum_1 = require("browserify-bignum");
+var ed2curve_1 = require("ed2curve");
+var hash_1 = require("./hash");
+exports.bigNumberToBuffer = function (bignumber, size) {
+    return browserify_bignum_1["default"](bignumber).toBuffer({ size: size });
 };
-
-export const getAddress = getAddressFromPublicKey;
-
-export const convertPublicKeyEd2Curve = ed2curve.convertPublicKey;
-
-export const convertPrivateKeyEd2Curve = ed2curve.convertSecretKey;
+exports.bufferToBigNumberString = function (bigNumberBuffer) {
+    return browserify_bignum_1["default"].fromBuffer(bigNumberBuffer).toString();
+};
+exports.bufferToHex = function (buffer) { return naclInstance.to_hex(buffer); };
+exports.hexToBuffer = function (hex) { return Buffer.from(hex, 'hex'); };
+exports.getFirstEightBytesReversed = function (publicKeyBytes) {
+    return Buffer.from(publicKeyBytes)
+        .slice(0, 8)
+        .reverse();
+};
+exports.toAddress = function (buffer) { return exports.bufferToBigNumberString(buffer) + "L"; };
+exports.getAddressFromPublicKey = function (publicKey) {
+    var publicKeyHash = hash_1["default"](publicKey, 'hex');
+    var publicKeyTransform = exports.getFirstEightBytesReversed(publicKeyHash);
+    var address = exports.toAddress(publicKeyTransform);
+    return address;
+};
+exports.getAddress = exports.getAddressFromPublicKey;
+exports.convertPublicKeyEd2Curve = ed2curve_1["default"].convertPublicKey;
+exports.convertPrivateKeyEd2Curve = ed2curve_1["default"].convertSecretKey;

@@ -12,13 +12,13 @@
  * Removal or modification of this copyright notice is prohibited.
  *
  */
-const hash = (data, format) => {
+const hash = (data: any, format: string) => {
 	if (Buffer.isBuffer(data)) {
 		return Buffer.from(naclInstance.crypto_hash_sha256(data));
 	}
 
 	if (typeof data === 'string') {
-		if (!['utf8', 'hex'].includes(format)) {
+		if (['utf8', 'hex'].indexOf(format) < 0) {
 			throw new Error(
 				'Unsupported string format. Currently only `hex` and `utf8` are supported.',
 			);
