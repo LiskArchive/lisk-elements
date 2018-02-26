@@ -13,10 +13,26 @@
  *
  */
 import { bufferToHex, getAddress } from './convert';
-import hash from './hash';
+import * as hash from './hash';
+import { Address } from 'cluster';
 
-export const getPrivateAndPublicKeyBytesFromPassphrase = passphrase => {
-	const hashed = hash(passphrase, 'utf8');
+interface KeyPairBytes {
+	privateKey: Uint8Array;
+	publicKey: Uint8Array;
+}
+
+interface KeyPair {
+	privateKey: string;
+	publicKey: string;
+}
+
+interface AddressPublicKeyPair {
+	address: string;
+	publicKey: string;
+}
+
+export const getPrivateAndPublicKeyBytesFromPassphrase = (passphrase: string): KeyPairBytes => {
+	const hashed = hash.hash(passphrase, 'utf8');
 
 	const { signSk, signPk } = naclInstance.crypto_sign_seed_keypair(hashed);
 
@@ -26,7 +42,7 @@ export const getPrivateAndPublicKeyBytesFromPassphrase = passphrase => {
 	};
 };
 
-export const getPrivateAndPublicKeyFromPassphrase = passphrase => {
+export const getPrivateAndPublicKeyFromPassphrase = (passphrase: string): KeyPair => {
 	const { privateKey, publicKey } = getPrivateAndPublicKeyBytesFromPassphrase(
 		passphrase,
 	);
@@ -39,7 +55,7 @@ export const getPrivateAndPublicKeyFromPassphrase = passphrase => {
 
 export const getKeys = getPrivateAndPublicKeyFromPassphrase;
 
-export const getAddressAndPublicKeyFromPassphrase = passphrase => {
+export const getAddressAndPublicKeyFromPassphrase = (passphrase: string): AddressPublicKeyPair => {
 	const accountKeys = getKeys(passphrase);
 	const accountAddress = getAddress(accountKeys.publicKey);
 

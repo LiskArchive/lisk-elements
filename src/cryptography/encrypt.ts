@@ -12,8 +12,7 @@
  * Removal or modification of this copyright notice is prohibited.
  *
  */
-import crypto from 'crypto';
-import { version } from '../../package.json';
+import * as crypto from 'crypto';
 import {
 	hexToBuffer,
 	bufferToHex,
@@ -22,15 +21,21 @@ import {
 } from './convert';
 import { getPrivateAndPublicKeyBytesFromPassphrase } from './keys';
 
+const { version } = require('../../package.json');
 const PBKDF2_ITERATIONS = 1e6;
 const PBKDF2_KEYLEN = 32;
 const PBKDF2_HASH_FUNCTION = 'sha256';
 
+interface EncryptedMessage {
+	nonce: string;
+	encryptedMessage: string;
+}
+
 export const encryptMessageWithPassphrase = (
-	message,
-	passphrase,
-	recipientPublicKey,
-) => {
+	message: string,
+	passphrase: string,
+	recipientPublicKey: string,
+): EncryptedMessage => {
 	const {
 		privateKey: senderPrivateKeyBytes,
 	} = getPrivateAndPublicKeyBytesFromPassphrase(passphrase);

@@ -12,7 +12,7 @@
  * Removal or modification of this copyright notice is prohibited.
  *
  */
-const hash = (data: any, format: string) => {
+export const hash = (data: any, format: string): Buffer => {
 	if (Buffer.isBuffer(data)) {
 		return Buffer.from(naclInstance.crypto_hash_sha256(data));
 	}
@@ -34,5 +34,3 @@ const hash = (data: any, format: string) => {
 		'Unsupported data format. Currently only Buffers or `hex` and `utf8` strings are supported.',
 	);
 };
-
-export default hash;

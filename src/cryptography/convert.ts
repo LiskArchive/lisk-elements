@@ -14,7 +14,7 @@
  */
 import bignum from 'browserify-bignum';
 import ed2curve from 'ed2curve';
-import hash from './hash';
+import * as hash from './hash';
 
 export const bigNumberToBuffer = (bignumber: number, size: number) =>
 	bignum(bignumber).toBuffer({ size });
@@ -34,7 +34,7 @@ export const getFirstEightBytesReversed = (publicKeyBytes: Buffer): Uint8Array =
 export const toAddress = (buffer: Uint8Array): string => `${bufferToBigNumberString(buffer)}L`;
 
 export const getAddressFromPublicKey = (publicKey: string): string => {
-	const publicKeyHash = hash(publicKey, 'hex');
+	const publicKeyHash = hash.hash(publicKey, 'hex');
 
 	const publicKeyTransform = getFirstEightBytesReversed(publicKeyHash);
 	const address = toAddress(publicKeyTransform);

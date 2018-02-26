@@ -14,8 +14,8 @@
  */
 import * as convert from './convert';
 import * as encrypt from './encrypt';
-import hash from './hash';
+import * as hash from './hash';
 import * as keys from './keys';
 import * as sign from './sign';
 
-export default Object.assign({}, convert, encrypt, { hash }, keys, sign);
+export default {...convert, ...encrypt, ...hash, ...keys, ...sign};
