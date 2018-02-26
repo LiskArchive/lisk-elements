@@ -11,6 +11,8 @@
  *
  * Removal or modification of this copyright notice is prohibited.
  *
+ * @flow
+ *
  */
 import naclFactory from 'js-nacl';
 import api from './api/liskApi';
@@ -19,9 +21,14 @@ import passphrase from './passphrase';
 import * as time from './transactions/utils/time';
 import transaction from './transactions';
 
-global.naclFactory = naclFactory;
+declare var global: {
+	naclInstance: ?NaclInstance,
+	naclFactory: any,
+}
 
+global.naclFactory = naclFactory;
 global.naclInstance = null;
+
 naclFactory.instantiate(nacl => {
 	naclInstance = nacl;
 });

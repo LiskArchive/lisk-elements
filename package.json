@@ -56,7 +56,7 @@
 		"eslint-config-lisk-base": "=0.1.0",
 		"eslint-plugin-flowtype": "=2.42.0",
 		"eslint-plugin-import": "=2.7.0",
-		"flow-bin": "=0.65.0",
+		"flow-bin": "0.65.0",
 		"grunt": "=1.0.1",
 		"grunt-browserify": "=5.0.0",
 		"grunt-contrib-uglify": "=3.0.1",

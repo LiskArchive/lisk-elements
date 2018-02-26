@@ -11,6 +11,8 @@
  *
  * Removal or modification of this copyright notice is prohibited.
  *
+ * @flow
+ *
  */
 import * as convert from './convert';
 import * as encrypt from './encrypt';

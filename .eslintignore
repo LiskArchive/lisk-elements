@@ -3,3 +3,5 @@ dist-*/
 docs/
 browsertest/browsertest.js
 browsertest/browsertest.min.js
+flow-typed/
+flow/

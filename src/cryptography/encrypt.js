@@ -11,6 +11,8 @@
  *
  * Removal or modification of this copyright notice is prohibited.
  *
+ * @flow
+ *
  */
 import crypto from 'crypto';
 import { version } from '../../package.json';
@@ -27,9 +29,9 @@ const PBKDF2_KEYLEN = 32;
 const PBKDF2_HASH_FUNCTION = 'sha256';
 
 export const encryptMessageWithPassphrase = (
-	message,
-	passphrase,
-	recipientPublicKey,
+	message: string,
+	passphrase: string,
+	recipientPublicKey: string,
 ) => {
 	const {
 		privateKey: senderPrivateKeyBytes,
@@ -57,10 +59,10 @@ export const encryptMessageWithPassphrase = (
 };
 
 export const decryptMessageWithPassphrase = (
-	cipherHex,
-	nonce,
-	passphrase,
-	senderPublicKey,
+	cipherHex: string,
+	nonce: string,
+	passphrase: string,
+	senderPublicKey: string,
 ) => {
 	const {
 		privateKey: recipientPrivateKeyBytes,
@@ -95,7 +97,7 @@ export const decryptMessageWithPassphrase = (
 	}
 };
 
-const getKeyFromPassword = (password, salt) =>
+const getKeyFromPassword = (password: string, salt: Buffer) =>
 	crypto.pbkdf2Sync(
 		password,
 		salt,
@@ -104,7 +106,7 @@ const getKeyFromPassword = (password, salt) =>
 		PBKDF2_HASH_FUNCTION,
 	);
 
-const encryptAES256GCMWithPassword = (plainText, password) => {
+const encryptAES256GCMWithPassword = (plainText: string, password: string) => {
 	const iv = crypto.randomBytes(16);
 	const salt = crypto.randomBytes(16);
 	const key = getKeyFromPassword(password, salt);
@@ -134,7 +136,9 @@ const getTagBuffer = tag => {
 	return tagBuffer;
 };
 
-const decryptAES256GCMWithPassword = ({ cipher, iv, salt, tag }, password) => {
+const decryptAES256GCMWithPassword =
+	({ cipher, iv, salt, tag }: {cipher: string, iv: string, salt: string, tag: string},
+		password: string): string => {
 	const tagBuffer = getTagBuffer(tag);
 	const key = getKeyFromPassword(password, hexToBuffer(salt));
 
@@ -147,5 +151,4 @@ const decryptAES256GCMWithPassword = ({ cipher, iv, salt, tag }, password) => {
 };
 
 export const encryptPassphraseWithPassword = encryptAES256GCMWithPassword;
-
 export const decryptPassphraseWithPassword = decryptAES256GCMWithPassword;

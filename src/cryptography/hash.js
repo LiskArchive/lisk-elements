@@ -11,12 +11,10 @@
  *
  * Removal or modification of this copyright notice is prohibited.
  *
+ * @flow
+ *
  */
-const hash = (data, format) => {
-	if (Buffer.isBuffer(data)) {
-		return Buffer.from(naclInstance.crypto_hash_sha256(data));
-	}
-
+const hash = (data: Uint8Array | string, format: string): Buffer => {
 	if (typeof data === 'string') {
 		if (!['utf8', 'hex'].includes(format)) {
 			throw new Error(
@@ -28,6 +26,10 @@ const hash = (data, format) => {
 				? naclInstance.encode_utf8(data)
 				: naclInstance.from_hex(data);
 		return Buffer.from(naclInstance.crypto_hash_sha256(encoded));
+	}
+
+	if (Buffer.isBuffer(data)) {
+		return Buffer.from(naclInstance.crypto_hash_sha256(data));
 	}
 
 	throw new Error(

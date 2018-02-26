@@ -11,6 +11,8 @@
  *
  * Removal or modification of this copyright notice is prohibited.
  *
+ * @flow
+ *
  */
 import { hexToBuffer, bufferToHex } from './convert';
 import { getPrivateAndPublicKeyBytesFromPassphrase } from './keys';
@@ -24,7 +26,22 @@ const signatureHeader = createHeader('SIGNATURE');
 const secondSignatureHeader = createHeader('SECOND SIGNATURE');
 const signatureFooter = createHeader('END LISK SIGNED MESSAGE');
 
-export const signMessageWithPassphrase = (message, passphrase) => {
+type VerifyingMessage = {
+	message: string,
+	signature: string,
+	publicKey: string,
+};
+
+type SignedMessage = {
+	message: string,
+	publicKey: string,
+	signature: string,
+	secondPublicKey?: string,
+	secondSignature?: string,
+};
+
+export const signMessageWithPassphrase =
+	(message: string, passphrase: string): SignedMessage => {
 	const msgBytes = Buffer.from(message, 'utf8');
 	const { privateKey, publicKey } = getPrivateAndPublicKeyBytesFromPassphrase(
 		passphrase,
@@ -42,7 +59,7 @@ export const verifyMessageWithPublicKey = ({
 	message,
 	signature,
 	publicKey,
-}) => {
+}: VerifyingMessage): boolean => {
 	const msgBytes = Buffer.from(message, 'utf8');
 	const signatureBytes = hexToBuffer(signature);
 	const publicKeyBytes = hexToBuffer(publicKey);
@@ -63,10 +80,10 @@ export const verifyMessageWithPublicKey = ({
 };
 
 export const signMessageWithTwoPassphrases = (
-	message,
-	passphrase,
-	secondPassphrase,
-) => {
+	message: string,
+	passphrase: string,
+	secondPassphrase: string,
+): SignedMessage => {
 	const msgBytes = Buffer.from(message, 'utf8');
 	const keypairBytes = getPrivateAndPublicKeyBytesFromPassphrase(passphrase);
 	const secondKeypairBytes = getPrivateAndPublicKeyBytesFromPassphrase(
@@ -97,12 +114,12 @@ export const verifyMessageWithTwoPublicKeys = ({
 	secondSignature,
 	publicKey,
 	secondPublicKey,
-}) => {
+}: SignedMessage): boolean => {
 	const messageBytes = Buffer.from(message, 'utf8');
 	const signatureBytes = hexToBuffer(signature);
-	const secondSignatureBytes = hexToBuffer(secondSignature);
+	const secondSignatureBytes = hexToBuffer(secondSignature || '');
 	const publicKeyBytes = hexToBuffer(publicKey);
-	const secondPublicKeyBytes = hexToBuffer(secondPublicKey);
+	const secondPublicKeyBytes = hexToBuffer(secondPublicKey || '');
 
 	if (signatureBytes.length !== naclInstance.crypto_sign_BYTES) {
 		throw new Error(
@@ -146,7 +163,7 @@ export const printSignedMessage = ({
 	publicKey,
 	secondSignature,
 	secondPublicKey,
-}) =>
+}: SignedMessage): string =>
 	[
 		signedMessageHeader,
 		messageHeader,
@@ -164,7 +181,8 @@ export const printSignedMessage = ({
 		.filter(Boolean)
 		.join('\n');
 
-export const signAndPrintMessage = (message, passphrase, secondPassphrase) => {
+export const signAndPrintMessage =
+	(message: string, passphrase: string, secondPassphrase: string): string => {
 	const signedMessage = secondPassphrase
 		? signMessageWithTwoPassphrases(message, passphrase, secondPassphrase)
 		: signMessageWithPassphrase(message, passphrase);
@@ -172,13 +190,13 @@ export const signAndPrintMessage = (message, passphrase, secondPassphrase) => {
 	return printSignedMessage(signedMessage);
 };
 
-export const signData = (data, passphrase) => {
+export const signData = (data: Uint8Array, passphrase: string): string => {
 	const { privateKey } = getPrivateAndPublicKeyBytesFromPassphrase(passphrase);
 	const signature = naclInstance.crypto_sign_detached(data, privateKey);
 	return bufferToHex(signature);
 };
 
-export const verifyData = (data, signature, publicKey) =>
+export const verifyData = (data: Uint8Array, signature: string, publicKey: string): boolean =>
 	naclInstance.crypto_sign_verify_detached(
 		hexToBuffer(signature),
 		data,

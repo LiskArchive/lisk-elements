@@ -39,3 +39,5 @@ declare type NethashOptions = {
 	mainnet: NethashOption,
 	testnet: NethashOption,
 };
+
+declare var naclInstance: NaclInstance;

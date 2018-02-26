@@ -11,29 +11,31 @@
  *
  * Removal or modification of this copyright notice is prohibited.
  *
+ * @flow
+ *
  */
 import bignum from 'browserify-bignum';
 import ed2curve from 'ed2curve';
 import hash from './hash';
 
-export const bigNumberToBuffer = (bignumber, size) =>
+export const bigNumberToBuffer = (bignumber: string | number, size: number): Uint8Array =>
 	bignum(bignumber).toBuffer({ size });
 
-export const bufferToBigNumberString = bigNumberBuffer =>
+export const bufferToBigNumberString = (bigNumberBuffer: Uint8Array): string =>
 	bignum.fromBuffer(bigNumberBuffer).toString();
 
-export const bufferToHex = buffer => naclInstance.to_hex(buffer);
+export const bufferToHex = (buffer: Uint8Array): string => naclInstance.to_hex(buffer);
 
-export const hexToBuffer = hex => Buffer.from(hex, 'hex');
+export const hexToBuffer = (hex: string): Buffer => Buffer.from(hex, 'hex');
 
-export const getFirstEightBytesReversed = publicKeyBytes =>
+export const getFirstEightBytesReversed = (publicKeyBytes: Uint8Array): Uint8Array =>
 	Buffer.from(publicKeyBytes)
 		.slice(0, 8)
 		.reverse();
 
-export const toAddress = buffer => `${bufferToBigNumberString(buffer)}L`;
+export const toAddress = (buffer: Uint8Array): string => `${bufferToBigNumberString(buffer)}L`;
 
-export const getAddressFromPublicKey = publicKey => {
+export const getAddressFromPublicKey = (publicKey: string): string => {
 	const publicKeyHash = hash(publicKey, 'hex');
 
 	const publicKeyTransform = getFirstEightBytesReversed(publicKeyHash);
