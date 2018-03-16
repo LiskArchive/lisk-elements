@@ -33,7 +33,7 @@ describe('APIClient module', () => {
 	const defaultHeaders = {
 		'Content-Type': 'application/json',
 		nethash: mainnetHash,
-		os: 'lisk-js-api',
+		os: 'lisk-elements-api',
 		version: '1.0.0',
 		minVersion: '>=1.0.0',
 	};
@@ -41,7 +41,7 @@ describe('APIClient module', () => {
 	const customHeaders = {
 		'Content-Type': 'application/json',
 		nethash: testnetHash,
-		os: 'lisk-js-api',
+		os: 'lisk-elements-api',
 		version: '0.5.0',
 		minVersion: '>=0.1.0',
 	};

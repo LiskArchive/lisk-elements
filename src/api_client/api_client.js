@@ -40,7 +40,7 @@ const defaultOptions = {
 
 const commonHeaders = {
 	'Content-Type': 'application/json',
-	os: 'lisk-js-api',
+	os: 'lisk-elements-api',
 };
 
 const getHeaders = (nethash, version, minVersion) =>

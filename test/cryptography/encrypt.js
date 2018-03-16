@@ -204,7 +204,7 @@ describe('encrypt', () => {
 					.and.be.hexString.and.have.length(32);
 			});
 
-			it('should output the current version of LiskJS', () => {
+			it('should output the current version of Lisk Elements', () => {
 				return expect(cipher)
 					.to.have.property('version')
 					.which.is.equal(version);
