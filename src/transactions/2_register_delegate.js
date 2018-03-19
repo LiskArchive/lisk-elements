@@ -12,17 +12,25 @@
  * Removal or modification of this copyright notice is prohibited.
  *
  */
+import cryptography from 'cryptography';
 import { DELEGATE_FEE } from './constants';
 import { wrapTransactionCreator } from './utils';
 
-const registerDelegate = ({ username }) => ({
-	type: 2,
-	fee: DELEGATE_FEE.toString(),
-	asset: {
-		delegate: {
-			username,
+const registerDelegate = ({ passphrase, username }) => {
+	const recipientId = passphrase
+		? cryptography.getAddressAndPublicKeyFromPassphrase(passphrase).address
+		: null;
+
+	return {
+		type: 2,
+		fee: DELEGATE_FEE.toString(),
+		recipientId,
+		asset: {
+			delegate: {
+				username,
+			},
 		},
-	},
-});
+	};
+};
 
 export default wrapTransactionCreator(registerDelegate);

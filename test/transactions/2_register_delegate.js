@@ -93,9 +93,10 @@ describe('#registerDelegate transaction', () => {
 				.and.equal(fee);
 		});
 
-		it('should have recipientId equal to null', () => {
-			return expect(registerDelegateTransaction).to.have.property('recipientId')
-				.and.be.null;
+		it('should have recipientId', () => {
+			return expect(registerDelegateTransaction)
+				.to.have.property('recipientId')
+				.and.be.a('string');
 		});
 
 		it('should have senderPublicKey hex string equal to sender public key', () => {
@@ -187,7 +188,7 @@ describe('#registerDelegate transaction', () => {
 					.equal(fee);
 			});
 
-			it('should have the recipient id', () => {
+			it('should have recipientId equal to null', () => {
 				return expect(registerDelegateTransaction)
 					.to.have.property('recipientId')
 					.equal(null);
