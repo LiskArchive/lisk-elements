@@ -13,10 +13,10 @@
  *
  */
 import naclFactory from 'js-nacl';
-import API from './api';
+import APIClient from './api_client';
 import cryptography from './cryptography';
+import * as constants from './lisk-constants';
 import passphrase from './passphrase';
-import * as time from './transactions/utils/time';
 import transaction from './transactions';
 
 global.naclFactory = naclFactory;
@@ -26,4 +26,10 @@ naclFactory.instantiate(nacl => {
 	naclInstance = nacl;
 });
 
-export default { cryptography, transaction, API, time, passphrase };
+export default {
+	APIClient,
+	cryptography,
+	passphrase,
+	transaction,
+	constants,
+};
