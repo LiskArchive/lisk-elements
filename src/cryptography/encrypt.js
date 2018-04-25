@@ -105,7 +105,7 @@ const getKeyFromPassword = (password, salt) =>
 	);
 
 const encryptAES256GCMWithPassword = (plainText, password) => {
-	const iv = crypto.randomBytes(16);
+	const iv = crypto.randomBytes(12);
 	const salt = crypto.randomBytes(16);
 	const key = getKeyFromPassword(password, salt);
 
