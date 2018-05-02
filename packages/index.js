@@ -13,11 +13,11 @@
  *
  */
 import naclFactory from 'js-nacl';
-import APIClient from './api_client';
-import cryptography from './cryptography';
-import * as constants from './lisk-constants';
-import passphrase from './passphrase';
-import transaction from './transactions';
+import APIClient from 'lisk-api-client';
+import cryptography from 'lisk-cryptography';
+import * as constants from 'lisk-constants';
+import passphrase from 'lisk-passphrase';
+import transaction from 'lisk-transactions';
 
 global.naclFactory = naclFactory;
 
