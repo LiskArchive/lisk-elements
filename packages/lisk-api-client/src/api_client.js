@@ -17,7 +17,7 @@ import {
 	MAINNET_NETHASH,
 	TESTNET_NETHASH,
 	BETANET_NETHASH,
-} from 'lisk-constants';
+} from 'lisk-constants/src';
 import * as constants from './constants';
 import {
 	AccountsResource,

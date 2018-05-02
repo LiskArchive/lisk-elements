@@ -19,7 +19,7 @@ import {
 	BETANET_NODES,
 	TESTNET_NODES,
 	MAINNET_NODES,
-} from 'lisk-api-client/constants';
+} from 'lisk-api-client/src/constants';
 
 describe('api constants module', () => {
 	it('GET should be a string', () => {

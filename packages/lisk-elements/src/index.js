@@ -12,22 +12,24 @@
  * Removal or modification of this copyright notice is prohibited.
  *
  */
-import cryptography from 'lisk-cryptography';
-import { SIGNATURE_FEE } from './constants';
-import { wrapTransactionCreator } from './utils';
+import naclFactory from 'js-nacl';
+import APIClient from 'lisk-api-client/src';
+import cryptography from 'lisk-cryptography/src';
+import * as constants from 'lisk-constants/src';
+import passphrase from 'lisk-passphrase/src';
+import transaction from 'lisk-transactions/src';
 
-const registerSecondPassphrase = ({ secondPassphrase }) => {
-	const { publicKey } = cryptography.getKeys(secondPassphrase);
+global.naclFactory = naclFactory;
 
-	return {
-		type: 1,
-		fee: SIGNATURE_FEE.toString(),
-		asset: {
-			signature: {
-				publicKey,
-			},
-		},
-	};
+global.naclInstance = null;
+naclFactory.instantiate(nacl => {
+	naclInstance = nacl;
+});
+
+export default {
+	APIClient,
+	cryptography,
+	passphrase,
+	transaction,
+	constants,
 };
-
-export default wrapTransactionCreator(registerSecondPassphrase);

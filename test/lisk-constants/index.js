@@ -21,7 +21,7 @@ import {
 	BETANET_NETHASH,
 	TESTNET_NETHASH,
 	MAINNET_NETHASH,
-} from 'lisk-constants';
+} from 'lisk-constants/src';
 
 describe('lisk-constants', () => {
 	it('EPOCH_TIME should be a Date instance', () => {
