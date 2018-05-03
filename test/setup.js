@@ -52,7 +52,7 @@ Assertion.addProperty('integer', function handleAssert() {
 [sinonChai, chaiAsPromised].forEach(plugin => chai.use(plugin));
 
 global.sinon = sinon;
-global.sandbox = sinon.sandbox.create({
+global.sandbox = sinon.createSandbox({
 	useFakeTimers: true,
 });
 
