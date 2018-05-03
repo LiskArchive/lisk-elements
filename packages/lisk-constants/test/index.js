@@ -21,7 +21,7 @@ import {
 	BETANET_NETHASH,
 	TESTNET_NETHASH,
 	MAINNET_NETHASH,
-} from 'lisk-constants/src';
+} from '../src';
 
 describe('lisk-constants', () => {
 	it('EPOCH_TIME should be a Date instance', () => {
@@ -45,14 +45,14 @@ describe('lisk-constants', () => {
 	});
 
 	it('BETANET_NETHASH should be a string', () => {
-		return expect(BETANET_NETHASH).to.be.a('string');
+		return expect(BETANET_NETHASH).to.be.a.hexString;
 	});
 
 	it('TESTNET_NETHASH should be a string', () => {
-		return expect(TESTNET_NETHASH).to.be.a('string');
+		return expect(TESTNET_NETHASH).to.be.a.hexString;
 	});
 
 	it('MAINNET_NETHASH should be a string', () => {
-		return expect(MAINNET_NETHASH).to.be.a('string');
+		return expect(MAINNET_NETHASH).to.be.a.hexString;
 	});
 });
