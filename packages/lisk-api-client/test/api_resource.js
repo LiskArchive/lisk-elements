@@ -13,7 +13,7 @@
  *
  */
 
-import APIResource from 'lisk-api-client/src/api_resource';
+import APIResource from '../src/api_resource';
 // Require is used for stubbing
 const popsicle = require('popsicle');
 
