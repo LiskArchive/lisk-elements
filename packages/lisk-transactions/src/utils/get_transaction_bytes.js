@@ -14,7 +14,7 @@
  */
 import bignum from 'browserify-bignum';
 import cryptography from 'lisk-cryptography';
-import { MAX_TRANSACTION_AMOUNT } from 'lisk-constants/src';
+import { MAX_TRANSACTION_AMOUNT } from 'lisk-constants';
 
 export const isValidValue = value => ![undefined, false, NaN].includes(value);
 
