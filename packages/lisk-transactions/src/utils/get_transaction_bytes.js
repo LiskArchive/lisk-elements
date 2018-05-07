@@ -143,7 +143,9 @@ const REQUIRED_TRANSACTION_PARAMETERS = [
 
 export const checkTransaction = transaction => {
 	checkRequiredFields(REQUIRED_TRANSACTION_PARAMETERS, transaction);
-	const { asset: { data } } = transaction;
+	const {
+		asset: { data },
+	} = transaction;
 	if (data && data.length > BYTESIZES.DATA) {
 		throw new Error(
 			`Transaction asset data exceeds size of ${BYTESIZES.DATA}.`,
@@ -179,7 +181,7 @@ const getTransactionBytes = transaction => {
 		? cryptography.bigNumberToBuffer(
 				recipientId.slice(0, -1),
 				BYTESIZES.RECIPIENT_ID,
-			)
+		  )
 		: Buffer.alloc(BYTESIZES.RECIPIENT_ID);
 
 	const amountBigNum = bignum(amount);
