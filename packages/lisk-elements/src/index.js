@@ -12,19 +12,11 @@
  * Removal or modification of this copyright notice is prohibited.
  *
  */
-import naclFactory from 'js-nacl';
 import APIClient from 'lisk-api-client/src';
 import cryptography from 'lisk-cryptography/src';
 import * as constants from 'lisk-constants/src';
 import passphrase from 'lisk-passphrase/src';
 import transaction from 'lisk-transactions/src';
-
-global.naclFactory = naclFactory;
-
-global.naclInstance = null;
-naclFactory.instantiate(nacl => {
-	naclInstance = nacl;
-});
 
 export default {
 	APIClient,
