@@ -12,16 +12,6 @@
  * Removal or modification of this copyright notice is prohibited.
  *
  */
-import APIClient from 'lisk-api-client';
-import * as constants from 'lisk-constants';
-import cryptography from 'lisk-cryptography';
-import passphrase from 'lisk-passphrase';
-import transaction from 'lisk-transactions';
+import 'chai/register-expect';
 
-export default {
-	APIClient,
-	constants,
-	cryptography,
-	passphrase,
-	transaction,
-};
+process.env.NODE_ENV = 'test';
