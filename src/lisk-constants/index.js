@@ -16,9 +16,11 @@ export const EPOCH_TIME = new Date(Date.UTC(2016, 4, 24, 17, 0, 0, 0));
 export const EPOCH_TIME_MILLISECONDS = EPOCH_TIME.getTime();
 export const EPOCH_TIME_SECONDS = Math.floor(EPOCH_TIME.getTime() / 1000);
 
-// Largest possible address. Derived from bignum.fromBuffer(Buffer.from(new Array(8).fill(255))).
+// Largest possible address. Derived from bignum.fromBuffer(Buffer.from(new Array(8).fill(255)))
 export const MAX_ADDRESS_NUMBER = '18446744073709551615';
-// Largest possible amount. Derived from bignum.fromBuffer(Buffer.from(new Array(8).fill(255))).
+// Largest possible timestamp. Derived from Math.pow(256, 4)
+export const MAX_TIMESTAMP = 4294967296;
+// Largest possible amount. Derived from bignum.fromBuffer(Buffer.from(new Array(8).fill(255)))
 export const MAX_TRANSACTION_AMOUNT = '18446744073709551615';
 
 export const BETANET_NETHASH =
