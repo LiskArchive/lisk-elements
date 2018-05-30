@@ -13,8 +13,24 @@
  *
  */
 import bignum from 'browserify-bignum';
-import { MAX_ADDRESS_NUMBER } from 'lisk-constants';
+import {
+	MAX_ADDRESS_NUMBER,
+	MAX_TIMESTAMP,
+	MAX_TRANSACTION_AMOUNT,
+	MAX_TRANSACTION_ID,
+} from 'lisk-constants';
 import { hexToBuffer } from 'cryptography/convert';
+import {
+	TRANSFER_FEE,
+	IN_TRANSFER_FEE,
+	OUT_TRANSFER_FEE,
+	SIGNATURE_FEE,
+	DELEGATE_FEE,
+	VOTE_FEE,
+	MULTISIGNATURE_FEE,
+	DAPP_FEE,
+	MAX_TRANSACTION_DATA_BYTES,
+} from '../constants';
 
 export const validatePublicKey = publicKey => {
 	const publicKeyBuffer = hexToBuffer(publicKey);
@@ -23,6 +39,18 @@ export const validatePublicKey = publicKey => {
 			`Public key ${
 				publicKey
 			} length differs from the expected 32 bytes for a public key.`,
+		);
+	}
+	return true;
+};
+
+export const validateSignature = signature => {
+	const signatureBuffer = hexToBuffer(signature);
+	if (signatureBuffer.length !== 64) {
+		throw new Error(
+			`Signature ${
+				signature
+			} length differs from the expected 64 bytes for a public key.`,
 		);
 	}
 	return true;
@@ -69,5 +97,105 @@ export const validateAddress = address => {
 		);
 	}
 
+	return true;
+};
+
+const FEES = [
+	TRANSFER_FEE,
+	// SIGNATURE_FEE,
+	// DELEGATE_FEE,
+	// VOTE_FEE,
+	// MULTISIGNATURE_FEE,
+	// DAPP_FEE,
+];
+
+export const validateTransactionSchema = transaction => {
+	if (
+		!(
+			transaction &&
+			typeof transaction === 'object' &&
+			!Array.isArray(transaction)
+		)
+	) {
+		throw new Error('Transaction must be an object');
+	}
+	const {
+		type,
+		amount,
+		senderPublicKey,
+		timestamp,
+		signature,
+		signSignature,
+		id,
+		fee,
+		recipientId,
+		recipientPublicKey,
+		asset,
+	} = transaction;
+	if (![0, 1, 2, 3, 4, 5].includes(type)) {
+		throw new Error('Transaction type must be an integer between 0 and 5');
+	}
+	if (
+		typeof amount !== 'string' ||
+		!amount.match(/^[0-9]+$/) ||
+		bignum(amount).cmp(bignum(MAX_TRANSACTION_AMOUNT)) > 0
+	) {
+		throw new Error(
+			'Transaction amount must be a string integer between 0 and 18446744073709551615',
+		);
+	}
+	try {
+		validatePublicKey(senderPublicKey);
+	} catch (error) {
+		throw new Error('Transaction must include a valid senderPublicKey');
+	}
+	if (
+		typeof timestamp !== 'number' ||
+		parseInt(timestamp, 10) !== timestamp ||
+		timestamp < 0 ||
+		timestamp > MAX_TIMESTAMP
+	) {
+		throw new Error('Transaction must include a valid timestamp');
+	}
+	try {
+		validateSignature(signature);
+	} catch (error) {
+		throw new Error('Transaction must include a valid signature');
+	}
+	if (![null, undefined].includes(signSignature)) {
+		try {
+			validateSignature(signSignature);
+		} catch (error) {
+			throw new Error('Transaction has an invalid signSignature');
+		}
+	}
+	if (
+		typeof id !== 'string' ||
+		!id.match(/^[0-9]+$/) ||
+		bignum(id).cmp(bignum(MAX_TRANSACTION_ID)) > 0
+	) {
+		throw new Error('Transaction must include a valid id');
+	}
+	if (fee !== FEES[type].toString()) {
+		throw new Error('Type 0 transactions must have a fee of 0.1 LSK');
+	}
+	try {
+		validateAddress(recipientId);
+	} catch (error) {
+		throw new Error('Transaction must include a valid recipientId');
+	}
+	if (![null, undefined].includes(recipientPublicKey)) {
+		try {
+			validatePublicKey(recipientPublicKey);
+		} catch (error) {
+			throw new Error('Transaction has an invalid recipientPublicKey');
+		}
+	}
+	if (typeof asset !== 'object' || asset === null || Array.isArray(asset)) {
+		throw new Error('Transaction must include an asset object');
+	}
+	if (typeof asset.data !== 'undefined' && (typeof asset.data !== 'string' || asset.data.length > MAX_TRANSACTION_DATA_BYTES)) {
+		throw new Error('Transaction has invalid asset.data');
+	}
 	return true;
 };

@@ -23,3 +23,5 @@ export const DELEGATE_FEE = 25 * FIXED_POINT;
 export const VOTE_FEE = 1 * FIXED_POINT;
 export const MULTISIGNATURE_FEE = 5 * FIXED_POINT;
 export const DAPP_FEE = 25 * FIXED_POINT;
+
+export const MAX_TRANSACTION_DATA_BYTES = 64;
