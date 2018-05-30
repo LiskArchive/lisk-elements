@@ -22,6 +22,8 @@ export const MAX_ADDRESS_NUMBER = '18446744073709551615';
 export const MAX_TIMESTAMP = 4294967296;
 // Largest possible amount. Derived from bignum.fromBuffer(Buffer.from(new Array(8).fill(255)))
 export const MAX_TRANSACTION_AMOUNT = '18446744073709551615';
+// Largest possible id. Derived from bignum.fromBuffer(Buffer.from(new Array(8).fill(255)))
+export const MAX_TRANSACTION_ID = '18446744073709551615';
 
 export const BETANET_NETHASH =
 	'ef3844327d1fd0fc5785291806150c937797bdb34a748c9cd932b7e859e9ca0c';
