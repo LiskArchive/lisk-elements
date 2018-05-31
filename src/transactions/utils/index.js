@@ -34,9 +34,10 @@ export { default as signRawTransaction } from './sign_raw_transaction';
 export { getTimeFromBlockchainEpoch, getTimeWithOffset } from './time';
 export {
 	checkPublicKeysForDuplicates,
+	validateAddress,
+	validateKeysgroup,
 	validatePublicKey,
 	validatePublicKeys,
-	validateKeysgroup,
-	validateAddress,
+	validateTransactionSchema,
 } from './validation';
 export { default as wrapTransactionCreator } from './wrap_transaction_creator';

@@ -17,7 +17,9 @@ import {
 	EPOCH_TIME_SECONDS,
 	EPOCH_TIME_MILLISECONDS,
 	MAX_ADDRESS_NUMBER,
+	MAX_TIMESTAMP,
 	MAX_TRANSACTION_AMOUNT,
+	MAX_TRANSACTION_ID,
 	BETANET_NETHASH,
 	TESTNET_NETHASH,
 	MAINNET_NETHASH,
@@ -40,8 +42,16 @@ describe('lisk-constants', () => {
 		return expect(MAX_ADDRESS_NUMBER).to.be.a('string');
 	});
 
+	it('MAX_TIMESTAMP should be an integer', () => {
+		return expect(MAX_TIMESTAMP).to.be.an.integer;
+	});
+
 	it('MAX_TRANSACTION_AMOUNT should be a string', () => {
 		return expect(MAX_TRANSACTION_AMOUNT).to.be.a('string');
+	});
+
+	it('MAX_TRANSACTION_ID should be a string', () => {
+		return expect(MAX_TRANSACTION_ID).to.be.a('string');
 	});
 
 	it('BETANET_NETHASH should be a string', () => {
