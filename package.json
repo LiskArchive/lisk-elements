@@ -23,6 +23,7 @@
     "node": ">=6.3 <=9.5",
     "npm": ">=3 <=5"
   },
+  "browser": "dist-browser/lisk-elements.min.js",
   "main": "dist-node/index.js",
   "scripts": {
     "prestart": "./bin/prestart.sh",
