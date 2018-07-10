@@ -219,7 +219,7 @@ describe('APIClient module', () => {
 					version: customHeaders.version,
 					nethash: testnetHash,
 				});
-				return expect(apiClient.headers).to.not.have.property('client');
+				return expect(apiClient.headers).to.not.have.property('User-Agent');
 			});
 		});
 
