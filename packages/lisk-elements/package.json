@@ -20,6 +20,7 @@
 		"node": ">=6.3 <=9.5",
 		"npm": ">=3 <=5"
 	},
+	"browser": "dist-browser/lisk-elements.min.js",
 	"main": "dist-node/index.js",
 	"scripts": {
 		"prestart": "./scripts/prestart.sh",
@@ -40,7 +41,7 @@
 		"prebuild:browser":
 			"rm ./dist-browser/lisk-elements.js ./dist-browser/lisk-elements.min.js | echo",
 		"build:browser":
-			"browserify ./dist-node/index.js -o ./dist-browser/lisk-elements.js -s lisk",
+			"browserify ./dist-node/index.js -o ./dist-browser/lisk-elements.js -s lisk --node",
 		"postbuild:browser": "npm run build:browser:min",
 		"build:browser:min":
 			"uglifyjs -nm -o ./dist-browser/lisk-elements.min.js ./dist-browser/lisk-elements.js",
