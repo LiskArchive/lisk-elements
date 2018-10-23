@@ -33,8 +33,8 @@ pipeline {
 					sh 'npm install --verbose'
 					saveCache(cache_file, './node_modules', 10)
 					sh '''
-					if [ ! -f "/home/lisk/.cache/Cypress/$(jq -r .devDependencies.cypress ./packages/lisk-constants/package.json)/Cypress/Cypress" ]; then
-						./packages/lisk-constants/node_modules/.bin/cypress install --force
+					if [ ! -f "/home/lisk/.cache/Cypress/$(jq -r .devDependencies.cypress ./package.json)/Cypress/Cypress" ]; then
+						./packages/node_modules/.bin/cypress install --force
 					fi
 					'''
 				}
