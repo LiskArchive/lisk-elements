@@ -35,6 +35,12 @@ export interface TransactionFunctions {
 
 interface TransactionPoolOptions {
 	readonly EXPIRE_TRANSACTIONS_JOB: number;
+	readonly MAX_TRANSACTIONS_PER_QUEUE: number;
+}
+
+interface AddedTransactionStatus {
+	readonly alreadyExists: boolean;
+	readonly isFull: boolean;
 }
 
 export type Transaction = TransactionObject & TransactionFunctions;
@@ -51,8 +57,9 @@ export class TransactionPool {
 	// tslint:disable-next-line variable-name
 	private readonly _queues: Queues;
 	private readonly EXPIRE_TRANSACTIONS_JOB: number;
+	private readonly MAX_TRANSACTIONS_PER_QUEUE: number;
 
-	public constructor({EXPIRE_TRANSACTIONS_JOB}: TransactionPoolOptions) {
+	public constructor({EXPIRE_TRANSACTIONS_JOB, MAX_TRANSACTIONS_PER_QUEUE}: TransactionPoolOptions) {
 		this._queues = {
 			received: new Queue(),
 			validated: new Queue(),
@@ -61,17 +68,33 @@ export class TransactionPool {
 			ready: new Queue(),
 		};
 		this.EXPIRE_TRANSACTIONS_JOB = EXPIRE_TRANSACTIONS_JOB;
+		this.MAX_TRANSACTIONS_PER_QUEUE = MAX_TRANSACTIONS_PER_QUEUE;
 
-		// tslint:disable-next-line
+		// tslint:disable-next-line no-unused-expression
 		new Job(this, this.expireTransactions, this.EXPIRE_TRANSACTIONS_JOB)
 	}
 
-	public addTransactions(transactions: ReadonlyArray<Transaction>): void {
-		transactions.forEach((transaction: Transaction) => {
-			if (this.existsInTransactionPool(transaction)) {
-				this._queues.received.enqueueOne(transaction);
-			}
-		});
+	public addTransaction(transaction: Transaction): AddedTransactionStatus {
+		if (this.existsInTransactionPool(transaction)) {
+			return {
+				isFull: false,
+				alreadyExists: true
+			};
+		}
+
+		if (this._queues.received.size() >= this.MAX_TRANSACTIONS_PER_QUEUE) {
+			return {
+				isFull: true,
+				alreadyExists: false 
+			};
+		}
+
+		this._queues.received.enqueueOne(transaction);
+
+		return {
+			isFull: false,
+			alreadyExists: false
+		};
 	}
 
 	public existsInTransactionPool(transaction: Transaction): boolean {
