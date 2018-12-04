@@ -97,6 +97,29 @@ export class TransactionPool {
 		};
 	}
 
+	public addVerifiedTransaction(transaction: Transaction): AddedTransactionStatus {
+		if (this.existsInTransactionPool(transaction)) {
+			return {
+				isFull: false,
+				alreadyExists: true
+			};
+		}
+
+		if (this._queues.verified.size() >= this.MAX_TRANSACTIONS_PER_QUEUE) {
+			return {
+				isFull: true,
+				alreadyExists: false 
+			};
+		}
+
+		this._queues.verified.enqueueOne(transaction);
+
+		return {
+			isFull: false,
+			alreadyExists: false
+		};
+	}
+
 	public existsInTransactionPool(transaction: Transaction): boolean {
 		return Object.keys(this._queues).reduce(
 			(previousValue, currentValue) =>
