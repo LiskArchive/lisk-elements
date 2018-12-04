@@ -2,7 +2,7 @@ import addresses from '../fixtures/addresses.json';
 import { expect } from 'chai';
 import transactionsObjects from '../fixtures/transactions.json';
 import { wrapTransferTransaction } from './utils/add_transaction_functions';
-import { TransactionPool } from '../src/transaction_pool';
+import { TransactionPool, Transaction } from '../src/transaction_pool';
 import * as sinon from 'sinon';
 // Require is used for stubbing
 const Queue = require('../src/queue').Queue;
@@ -38,11 +38,14 @@ describe('transaction pool', () => {
 			),
 			checkTransactionForExpiry: sandbox.stub(
 				queueCheckers,
-				'checkTransactionForExpiry'
+				'checkTransactionForExpiry',
 			),
 		};
 
-		transactionPool = new TransactionPool({ EXPIRE_TRANSACTIONS_JOB, MAX_TRANSACTIONS_PER_QUEUE });
+		transactionPool = new TransactionPool({
+			EXPIRE_TRANSACTIONS_JOB,
+			MAX_TRANSACTIONS_PER_QUEUE,
+		});
 		Object.keys(transactionPool.queues).forEach(queueName => {
 			sandbox
 				.stub((transactionPool as any)._queues, queueName)
@@ -59,25 +62,33 @@ describe('transaction pool', () => {
 		let isFullStub: sinon.SinonStub;
 
 		beforeEach(() => {
-			existsInPoolStub = sandbox.stub(transactionPool, 'existsInTransactionPool');
-			isFullStub = (transactionPool.queues.received.size as sinon.SinonStub);
+			existsInPoolStub = sandbox.stub(
+				transactionPool,
+				'existsInTransactionPool',
+			);
+			isFullStub = transactionPool.queues.received.size as sinon.SinonStub;
 		});
 
 		it('should return true for alreadyExists if transaction already exists in pool', () => {
 			existsInPoolStub.returns(true);
-			console.log(transactionPool.addTransaction(transactions[0]).alreadyExists);
-			expect(transactionPool.addTransaction(transactions[0]).alreadyExists).to.be.true;
+			console.log(
+				transactionPool.addTransaction(transactions[0]).alreadyExists,
+			);
+			expect(transactionPool.addTransaction(transactions[0]).alreadyExists).to
+				.be.true;
 		});
 
 		it('should return false for alreadyExists if transaction does not exist in pool', () => {
 			existsInPoolStub.returns(false);
-			expect(transactionPool.addTransaction(transactions[0]).alreadyExists).to.be.false;
+			expect(transactionPool.addTransaction(transactions[0]).alreadyExists).to
+				.be.false;
 		});
 
 		it('should return false for isFull if queue.size is less than MAX_TRANSACTIONS_PER_QUEUE', () => {
 			existsInPoolStub.returns(false);
 			isFullStub.returns(MAX_TRANSACTIONS_PER_QUEUE - 1);
-			expect(transactionPool.addTransaction(transactions[0]).isFull).to.be.false;
+			expect(transactionPool.addTransaction(transactions[0]).isFull).to.be
+				.false;
 		});
 
 		it('should return true for isFull if queue.size is equal to or greater than MAX_TRANSACTIONS_PER_QUEUE', () => {
@@ -89,14 +100,17 @@ describe('transaction pool', () => {
 		it('should call enqueue for received queue if the transaction does not exist and queue is not full', () => {
 			existsInPoolStub.returns(false);
 			isFullStub.returns(MAX_TRANSACTIONS_PER_QUEUE - 1);
-			transactionPool.addTransaction(transactions[0])
-			expect(transactionPool.queues.received.enqueueOne as sinon.SinonStub).to.be.calledWith(transactions[0]);
+			transactionPool.addTransaction(transactions[0]);
+			expect(transactionPool.queues.received
+				.enqueueOne as sinon.SinonStub).to.be.calledWith(transactions[0]);
 		});
 
 		it('should return false for isFull and alreadyExists if the transaction does not exist and queue is not full', () => {
 			existsInPoolStub.returns(false);
 			isFullStub.returns(MAX_TRANSACTIONS_PER_QUEUE - 1);
-			const addedTransactionStatus = transactionPool.addTransaction(transactions[0])
+			const addedTransactionStatus = transactionPool.addTransaction(
+				transactions[0],
+			);
 			expect(addedTransactionStatus.isFull).to.be.false;
 			expect(addedTransactionStatus.alreadyExists).to.be.false;
 		});
@@ -110,9 +124,9 @@ describe('transaction pool', () => {
 
 		it('should call checkTransactionForRecipientId with block transactions', () => {
 			transactionPool.onDeleteBlock(block);
-			expect(checkerStubs.checkTransactionForRecipientId).to.be.calledWithExactly(
-				block.transactions,
-			);
+			expect(
+				checkerStubs.checkTransactionForRecipientId,
+			).to.be.calledWithExactly(block.transactions);
 		});
 
 		it('should call removeFor for verified, pending and ready queues once', () => {
@@ -161,9 +175,9 @@ describe('transaction pool', () => {
 
 		it('should call checkTransactionForSenderPublicKey with block transactions', () => {
 			transactionPool.onNewBlock(block);
-			expect(checkerStubs.checkTransactionForSenderPublicKey).to.be.calledWithExactly(
-				block.transactions,
-			);
+			expect(
+				checkerStubs.checkTransactionForSenderPublicKey,
+			).to.be.calledWithExactly(block.transactions);
 		});
 
 		it('should call removeFor for received and validated queues once', () => {
@@ -238,23 +252,24 @@ describe('transaction pool', () => {
 		});
 	});
 
-	describe('expireTransactions', () => {
+	describe('#expireTransactions', () => {
 		let removeTransactionsFromQueuesStub: sinon.SinonStub;
-		let expireTransactions: () => boolean;
+		let expireTransactions: () => Promise<ReadonlyArray<Transaction>>;
 
 		beforeEach(() => {
-			removeTransactionsFromQueuesStub = sandbox.stub(transactionPool as any, 'removeTransactionsFromQueues');
-			expireTransactions = (transactionPool as any)['expireTransactions'].bind(transactionPool);
+			removeTransactionsFromQueuesStub = sandbox.stub(
+				transactionPool as any,
+				'removeTransactionsFromQueues',
+			);
+			return (expireTransactions = (transactionPool as any)[
+				'expireTransactions'
+			].bind(transactionPool));
 		});
 
-		it('should call removeTransactionsFromQueues twice', () => {
-			expireTransactions();
-			return expect(removeTransactionsFromQueuesStub).to.be.calledTwice;
-		});
-
-		it('should call checkTransactionForExpiry twice', () => {
-			expireTransactions();
-			return expect(checkerStubs.checkTransactionForExpiry).to.be.calledTwice;
+		it('should call removeTransactionsFromQueues once', () => {
+			return expireTransactions().then(
+				() => expect(removeTransactionsFromQueuesStub).to.be.calledOnce,
+			);
 		});
 	});
 });
