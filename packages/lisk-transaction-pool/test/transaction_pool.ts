@@ -114,6 +114,64 @@ describe('transaction pool', () => {
 		});
 	});
 
+	describe('#addVerifiedTransaction', () => {
+		let existsInPoolStub: sinon.SinonStub;
+		let isFullStub: sinon.SinonStub;
+
+		beforeEach(() => {
+			existsInPoolStub = sandbox.stub(
+				transactionPool,
+				'existsInTransactionPool',
+			);
+			isFullStub = transactionPool.queues.verified.size as sinon.SinonStub;
+			return;
+		});
+
+		it('should return true for alreadyExists if transaction already exists in pool', () => {
+			existsInPoolStub.returns(true);
+			return expect(transactionPool.addVerifiedTransaction(transactions[0]).alreadyExists).to
+				.be.true;
+		});
+
+		it('should return false for alreadyExists if transaction does not exist in pool', () => {
+			existsInPoolStub.returns(false);
+			return expect(transactionPool.addVerifiedTransaction(transactions[0]).alreadyExists).to
+				.be.false;
+		});
+
+		it('should return false for isFull if queue.size is less than MAX_TRANSACTIONS_PER_QUEUE', () => {
+			existsInPoolStub.returns(false);
+			isFullStub.returns(MAX_TRANSACTIONS_PER_QUEUE - 1);
+			return expect(transactionPool.addVerifiedTransaction(transactions[0]).isFull).to.be
+				.false;
+		});
+
+		it('should return true for isFull if queue.size is equal to or greater than MAX_TRANSACTIONS_PER_QUEUE', () => {
+			existsInPoolStub.returns(false);
+			isFullStub.returns(MAX_TRANSACTIONS_PER_QUEUE);
+			return expect(transactionPool.addVerifiedTransaction(transactions[0]).isFull).to.be.true;
+		});
+
+		it('should call enqueue for received queue if the transaction does not exist and queue is not full', () => {
+			existsInPoolStub.returns(false);
+			isFullStub.returns(MAX_TRANSACTIONS_PER_QUEUE - 1);
+			transactionPool.addVerifiedTransaction(transactions[0]);
+			return expect(transactionPool.queues.verified
+				.enqueueOne as sinon.SinonStub).to.be.calledWith(transactions[0]);
+		});
+
+		it('should return false for isFull and alreadyExists if the transaction does not exist and queue is not full', () => {
+			existsInPoolStub.returns(false);
+			isFullStub.returns(MAX_TRANSACTIONS_PER_QUEUE - 1);
+			const addedTransactionStatus = transactionPool.addVerifiedTransaction(
+				transactions[0],
+			);
+			expect(addedTransactionStatus.isFull).to.be.false;
+			return expect(addedTransactionStatus.alreadyExists).to.be.false;
+		});
+	});
+
+
 	describe('getProcessableTransactions', () => {});
 	describe('onDeleteBlock', () => {
 		const block = {
