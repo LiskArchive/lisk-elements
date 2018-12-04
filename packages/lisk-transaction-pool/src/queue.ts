@@ -111,4 +111,8 @@ export class Queue {
 
 		return affected;
 	}
+
+	public size(): number {
+		return this._transactions.length;
+	}
 }
