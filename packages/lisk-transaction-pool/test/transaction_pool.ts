@@ -1,6 +1,7 @@
 import addresses from '../fixtures/addresses.json';
 import { expect } from 'chai';
-import transactions from '../fixtures/transactions.json';
+import transactionsObjects from '../fixtures/transactions.json';
+import { wrapTransferTransaction } from './utils/add_transaction_functions';
 import { TransactionPool } from '../src/transaction_pool';
 import * as sinon from 'sinon';
 // Require is used for stubbing
@@ -8,8 +9,9 @@ const Queue = require('../src/queue').Queue;
 const queueCheckers = require('../src/queue_checkers');
 
 describe('transaction pool', () => {
-	const MULTISIGNATURE_TIMEOUT = 86400;
-	const TRANSACTION_TIMEOUT = 10800;
+	const EXPIRE_TRANSACTIONS_JOB = 86400;
+	const MAX_TRANSACTIONS_PER_QUEUE = 1000;
+	const transactions = transactionsObjects.map(wrapTransferTransaction);
 	let transactionPool: TransactionPool;
 
 	let checkerStubs: {
@@ -40,7 +42,7 @@ describe('transaction pool', () => {
 			),
 		};
 
-		transactionPool = new TransactionPool({ MULTISIGNATURE_TIMEOUT, TRANSACTION_TIMEOUT });
+		transactionPool = new TransactionPool({ EXPIRE_TRANSACTIONS_JOB, MAX_TRANSACTIONS_PER_QUEUE });
 		Object.keys(transactionPool.queues).forEach(queueName => {
 			sandbox
 				.stub((transactionPool as any)._queues, queueName)
@@ -52,7 +54,54 @@ describe('transaction pool', () => {
 		return sandbox.restore();
 	});
 
-	describe('addTransactions', () => {});
+	describe('addTransaction', () => {
+		let existsInPoolStub: sinon.SinonStub;
+		let isFullStub: sinon.SinonStub;
+
+		beforeEach(() => {
+			existsInPoolStub = sandbox.stub(transactionPool, 'existsInTransactionPool');
+			isFullStub = (transactionPool.queues.received.size as sinon.SinonStub);
+		});
+
+		it('should return true for alreadyExists if transaction already exists in pool', () => {
+			existsInPoolStub.returns(true);
+			console.log(transactionPool.addTransaction(transactions[0]).alreadyExists);
+			expect(transactionPool.addTransaction(transactions[0]).alreadyExists).to.be.true;
+		});
+
+		it('should return false for alreadyExists if transaction does not exist in pool', () => {
+			existsInPoolStub.returns(false);
+			expect(transactionPool.addTransaction(transactions[0]).alreadyExists).to.be.false;
+		});
+
+		it('should return false for isFull if queue.size is less than MAX_TRANSACTIONS_PER_QUEUE', () => {
+			existsInPoolStub.returns(false);
+			isFullStub.returns(MAX_TRANSACTIONS_PER_QUEUE - 1);
+			expect(transactionPool.addTransaction(transactions[0]).isFull).to.be.false;
+		});
+
+		it('should return true for isFull if queue.size is equal to or greater than MAX_TRANSACTIONS_PER_QUEUE', () => {
+			existsInPoolStub.returns(false);
+			isFullStub.returns(MAX_TRANSACTIONS_PER_QUEUE);
+			expect(transactionPool.addTransaction(transactions[0]).isFull).to.be.true;
+		});
+
+		it('should call enqueue for received queue if the transaction does not exist and queue is not full', () => {
+			existsInPoolStub.returns(false);
+			isFullStub.returns(MAX_TRANSACTIONS_PER_QUEUE - 1);
+			transactionPool.addTransaction(transactions[0])
+			expect(transactionPool.queues.received.enqueueOne as sinon.SinonStub).to.be.calledWith(transactions[0]);
+		});
+
+		it('should return false for isFull and alreadyExists if the transaction does not exist and queue is not full', () => {
+			existsInPoolStub.returns(false);
+			isFullStub.returns(MAX_TRANSACTIONS_PER_QUEUE - 1);
+			const addedTransactionStatus = transactionPool.addTransaction(transactions[0])
+			expect(addedTransactionStatus.isFull).to.be.false;
+			expect(addedTransactionStatus.alreadyExists).to.be.false;
+		});
+	});
+
 	describe('getProcessableTransactions', () => {});
 	describe('onDeleteBlock', () => {
 		const block = {
