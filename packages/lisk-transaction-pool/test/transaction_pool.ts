@@ -59,53 +59,52 @@ describe('transaction pool', () => {
 
 	describe('#addTransaction', () => {
 		let existsInPoolStub: sinon.SinonStub;
-		let isFullStub: sinon.SinonStub;
+		let receviedQueueSizeStub: sinon.SinonStub;
 
-		beforeEach(() => {
+		beforeEach(async () => {
 			existsInPoolStub = sandbox.stub(
 				transactionPool,
 				'existsInTransactionPool',
 			);
-			isFullStub = transactionPool.queues.received.size as sinon.SinonStub;
-			return;
+			receviedQueueSizeStub = transactionPool.queues.received.size as sinon.SinonStub;
 		});
 
-		it('should return true for alreadyExists if transaction already exists in pool', () => {
+		it('should return true for alreadyExists if transaction already exists in pool', async () => {
 			existsInPoolStub.returns(true);
 			return expect(transactionPool.addTransaction(transactions[0]).alreadyExists).to
 				.be.true;
 		});
 
-		it('should return false for alreadyExists if transaction does not exist in pool', () => {
+		it('should return false for alreadyExists if transaction does not exist in pool', async () => {
 			existsInPoolStub.returns(false);
 			return expect(transactionPool.addTransaction(transactions[0]).alreadyExists).to
 				.be.false;
 		});
 
-		it('should return false for isFull if queue.size is less than MAX_TRANSACTIONS_PER_QUEUE', () => {
+		it('should return false for isFull if queue.size is less than MAX_TRANSACTIONS_PER_QUEUE', async () => {
 			existsInPoolStub.returns(false);
-			isFullStub.returns(MAX_TRANSACTIONS_PER_QUEUE - 1);
+			receviedQueueSizeStub.returns(MAX_TRANSACTIONS_PER_QUEUE - 1);
 			return expect(transactionPool.addTransaction(transactions[0]).isFull).to.be
 				.false;
 		});
 
-		it('should return true for isFull if queue.size is equal to or greater than MAX_TRANSACTIONS_PER_QUEUE', () => {
+		it('should return true for isFull if queue.size is equal to or greater than MAX_TRANSACTIONS_PER_QUEUE', async () => {
 			existsInPoolStub.returns(false);
-			isFullStub.returns(MAX_TRANSACTIONS_PER_QUEUE);
+			receviedQueueSizeStub.returns(MAX_TRANSACTIONS_PER_QUEUE);
 			return expect(transactionPool.addTransaction(transactions[0]).isFull).to.be.true;
 		});
 
-		it('should call enqueue for received queue if the transaction does not exist and queue is not full', () => {
+		it('should call enqueue for received queue if the transaction does not exist and queue is not full', async () => {
 			existsInPoolStub.returns(false);
-			isFullStub.returns(MAX_TRANSACTIONS_PER_QUEUE - 1);
+			receviedQueueSizeStub.returns(MAX_TRANSACTIONS_PER_QUEUE - 1);
 			transactionPool.addTransaction(transactions[0]);
 			return expect(transactionPool.queues.received
 				.enqueueOne as sinon.SinonStub).to.be.calledWith(transactions[0]);
 		});
 
-		it('should return false for isFull and alreadyExists if the transaction does not exist and queue is not full', () => {
+		it('should return false for isFull and alreadyExists if the transaction does not exist and queue is not full', async () => {
 			existsInPoolStub.returns(false);
-			isFullStub.returns(MAX_TRANSACTIONS_PER_QUEUE - 1);
+			receviedQueueSizeStub.returns(MAX_TRANSACTIONS_PER_QUEUE - 1);
 			const addedTransactionStatus = transactionPool.addTransaction(
 				transactions[0],
 			);
