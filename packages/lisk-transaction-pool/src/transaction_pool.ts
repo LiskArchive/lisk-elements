@@ -38,7 +38,7 @@ interface TransactionPoolOptions {
 	readonly MAX_TRANSACTIONS_PER_QUEUE: number;
 }
 
-interface AddedTransactionStatus {
+interface AddTransactionStatus {
 	readonly alreadyExists: boolean;
 	readonly isFull: boolean;
 }
@@ -74,7 +74,7 @@ export class TransactionPool {
 		new Job(this, this.expireTransactions, this.EXPIRE_TRANSACTIONS_JOB)
 	}
 
-	public addTransaction(transaction: Transaction): AddedTransactionStatus {
+	public addTransaction(transaction: Transaction): AddTransactionStatus {
 		if (this.existsInTransactionPool(transaction)) {
 			return {
 				isFull: false,
