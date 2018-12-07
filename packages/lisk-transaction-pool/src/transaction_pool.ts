@@ -73,51 +73,13 @@ export class TransactionPool {
 		// tslint:disable-next-line no-unused-expression
 		new Job(this, this.expireTransactions, this.EXPIRE_TRANSACTIONS_JOB)
 	}
-
+	
 	public addTransaction(transaction: Transaction): AddTransactionStatus {
-		if (this.existsInTransactionPool(transaction)) {
-			return {
-				isFull: false,
-				alreadyExists: true
-			};
-		}
-
-		if (this._queues.received.size() >= this.MAX_TRANSACTIONS_PER_QUEUE) {
-			return {
-				isFull: true,
-				alreadyExists: false 
-			};
-		}
-
-		this._queues.received.enqueueOne(transaction);
-
-		return {
-			isFull: false,
-			alreadyExists: false
-		};
+		return this.addTransactionToQueue('received', transaction);
 	}
 
-	public addVerifiedTransaction(transaction: Transaction): AddedTransactionStatus {
-		if (this.existsInTransactionPool(transaction)) {
-			return {
-				isFull: false,
-				alreadyExists: true
-			};
-		}
-
-		if (this._queues.verified.size() >= this.MAX_TRANSACTIONS_PER_QUEUE) {
-			return {
-				isFull: true,
-				alreadyExists: false 
-			};
-		}
-
-		this._queues.verified.enqueueOne(transaction);
-
-		return {
-			isFull: false,
-			alreadyExists: false
-		};
+	public addVerifiedTransaction(transaction: Transaction): AddTransactionStatus {
+		return this.addTransactionToQueue('verified', transaction);
 	}
 
 	public existsInTransactionPool(transaction: Transaction): boolean {
@@ -211,6 +173,29 @@ export class TransactionPool {
 					...this.queues.verified.transactions,
 			  ])
 			: true;
+	}
+
+	private addTransactionToQueue(queueName: string, transaction: Transaction): AddedTransactionStatus {
+		if (this.existsInTransactionPool(transaction)) {
+			return {
+				isFull: false,
+				alreadyExists: true
+			};
+		}
+
+		if (this._queues[queueName].size() >= this.MAX_TRANSACTIONS_PER_QUEUE) {
+			return {
+				isFull: true,
+				alreadyExists: false 
+			};
+		}
+
+		this._queues[queueName].enqueueOne(transaction);
+
+		return {
+			isFull: false,
+			alreadyExists: false
+		};
 	}
 
 	private expireTransactions(): Promise<ReadonlyArray<Transaction>> {
