@@ -38,12 +38,14 @@ interface TransactionPoolOptions {
 	readonly MAX_TRANSACTIONS_PER_QUEUE: number;
 }
 
-interface AddTransactionStatus {
+export interface AddTransactionStatus {
 	readonly alreadyExists: boolean;
 	readonly isFull: boolean;
 }
 
 export type Transaction = TransactionObject & TransactionFunctions;
+
+export type queueNames = 'received' | 'validated' | 'verified' | 'pending' | 'ready';
 
 interface Block {
 	readonly transactions: ReadonlyArray<Transaction>;
@@ -75,11 +77,15 @@ export class TransactionPool {
 	}
 	
 	public addTransaction(transaction: Transaction): AddTransactionStatus {
-		return this.addTransactionToQueue('received', transaction);
+		const receivedQueue: queueNames = 'received';
+
+		return this.addTransactionToQueue(receivedQueue, transaction);
 	}
 
 	public addVerifiedTransaction(transaction: Transaction): AddTransactionStatus {
-		return this.addTransactionToQueue('verified', transaction);
+		const verifiedQueue: queueNames = 'verified';
+
+		return this.addTransactionToQueue(verifiedQueue, transaction);
 	}
 
 	public existsInTransactionPool(transaction: Transaction): boolean {
@@ -175,7 +181,7 @@ export class TransactionPool {
 			: true;
 	}
 
-	private addTransactionToQueue(queueName: string, transaction: Transaction): AddedTransactionStatus {
+	private addTransactionToQueue(queueName: queueNames, transaction: Transaction): AddTransactionStatus {
 		if (this.existsInTransactionPool(transaction)) {
 			return {
 				isFull: false,
