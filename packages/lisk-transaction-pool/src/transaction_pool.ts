@@ -195,6 +195,8 @@ export class TransactionPool {
 				alreadyExists: false 
 			};
 		}
+		// Add receivedAt property for the transaction
+		transaction.receivedAt = new Date();
 
 		this._queues[queueName].enqueueOne(transaction);
 
