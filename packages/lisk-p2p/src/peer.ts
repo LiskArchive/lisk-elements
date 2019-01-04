@@ -25,6 +25,13 @@ import socketClusterClient from 'socketcluster-client';
 
 import { processPeerListFromResponse } from './response_handler_sanitization';
 
+export enum PeerCategory {
+	blacklist = 'black',
+	fixedlist = 'fixed',
+	whitelist = 'white',
+	none = 'none',
+}
+
 export interface PeerInfo {
 	readonly ipAddress: string;
 	readonly wsPort: number;
@@ -34,6 +41,7 @@ export interface PeerInfo {
 	readonly inboundSocket?: any; // TODO: Type SCServerSocket
 	readonly os: string;
 	readonly version: string;
+	readonly peerCategory?: PeerCategory;
 }
 
 export enum ConnectionState {
