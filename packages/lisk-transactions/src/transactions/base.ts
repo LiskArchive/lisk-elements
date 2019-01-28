@@ -46,7 +46,6 @@ import {
 	verifyMultisignatures,
 	verifySignature,
 } from '../utils';
-import { isTypedObjectArrayWithKeys } from '../utils/validation';
 import * as schemas from '../utils/validation/schema';
 
 export interface TransactionResponse {
@@ -67,14 +66,6 @@ export enum MultisignatureStatus {
 	NONMULTISIGNATURE = 1,
 	PENDING = 2,
 	READY = 3,
-}
-
-export interface EntityMap {
-	readonly [name: string]: ReadonlyArray<unknown> | undefined;
-}
-
-export interface RequiredState {
-	readonly sender: Account;
 }
 
 export const ENTITY_ACCOUNT = 'account';
@@ -103,6 +94,16 @@ export const createBaseTransaction = ({
 	};
 };
 
+export interface StateStore {
+	prepare(
+		entity: string,
+		filter: { readonly [key: string]: ReadonlyArray<string> },
+	): Promise<void>;
+	get<T>(entity: string, key: string, value: string): T;
+	exists(entity: string, key: string, value: string): boolean;
+	set<T>(entity: string, value: T): void;
+}
+
 export abstract class BaseTransaction {
 	public readonly amount: BigNum;
 	public readonly recipientId: string;
@@ -111,10 +112,10 @@ export abstract class BaseTransaction {
 	public readonly senderPublicKey: string;
 	public readonly signatures: string[];
 	public readonly timestamp: number;
-	public readonly type: number;
 	public readonly receivedAt: Date;
 	public readonly containsUniqueData?: boolean;
 
+	protected _type: number;
 	protected _fee: BigNum;
 	private _id?: string;
 	private _multisignatureStatus: MultisignatureStatus =
@@ -123,10 +124,18 @@ export abstract class BaseTransaction {
 	private _signSignature?: string;
 
 	public abstract assetToJSON(): object;
-	public abstract verifyAgainstOtherTransactions(
+	public abstract verifyAgainstOtherCustomTransactions(
 		transactions: ReadonlyArray<TransactionJSON>,
-	): TransactionResponse;
+	): ReadonlyArray<TransactionError>;
 	protected abstract getAssetBytes(): Buffer;
+	protected abstract getRequiredAttributes(): Attributes;
+	protected abstract validateCustomSchema(): ReadonlyArray<TransactionError>;
+	protected abstract applyCustom(
+		store: StateStore,
+	): ReadonlyArray<TransactionError>;
+	protected abstract undoCustom(
+		store: StateStore,
+	): ReadonlyArray<TransactionError>;
 
 	public constructor(rawTransaction: TransactionJSON) {
 		const { valid, errors } = checkTypes(rawTransaction);
@@ -139,6 +148,7 @@ export abstract class BaseTransaction {
 		}
 
 		this.amount = new BigNum(rawTransaction.amount);
+		this._type = rawTransaction.type;
 		this._fee = new BigNum(rawTransaction.fee);
 		this._id = rawTransaction.id;
 		this.recipientId = rawTransaction.recipientId;
@@ -151,13 +161,20 @@ export abstract class BaseTransaction {
 		this.signatures = (rawTransaction.signatures as string[]) || [];
 		this._signSignature = rawTransaction.signSignature;
 		this.timestamp = rawTransaction.timestamp;
-		this.type = rawTransaction.type;
 		this.receivedAt = rawTransaction.receivedAt || new Date();
 	}
 
+	public get type(): number {
+		if (!this._type) {
+			throw new Error('fee is required to be set before use');
+		}
+
+		return this._type;
+	}
+
 	public get fee(): BigNum {
-		if(!this._fee) {
-			throw new Error('fee is required to be set before use')
+		if (!this._fee) {
+			throw new Error('fee is required to be set before use');
 		}
 
 		return this._fee;
@@ -211,6 +228,18 @@ export abstract class BaseTransaction {
 		);
 	}
 
+	public verifyAgainstOtherTransactions(
+		transactions: ReadonlyArray<TransactionJSON>,
+	): TransactionResponse {
+		const errors = this.verifyAgainstOtherCustomTransactions(transactions);
+
+		return {
+			id: this.id,
+			status: errors.length > 0 ? Status.FAIL : Status.OK,
+			errors,
+		};
+	}
+
 	public getBytes(): Buffer {
 		const transactionBytes = Buffer.concat([
 			this.getBasicBytes(),
@@ -221,51 +250,8 @@ export abstract class BaseTransaction {
 		return transactionBytes;
 	}
 
-	public validateSchema(): TransactionResponse {
-		const transaction = this.toJSON();
-		const baseTransactionValidator = validator.compile(schemas.baseTransaction);
-		const valid = baseTransactionValidator(transaction) as boolean;
-		const errors = baseTransactionValidator.errors
-			? baseTransactionValidator.errors.map(
-					error =>
-						new TransactionError(
-							`'${error.dataPath}' ${error.message}`,
-							transaction.id,
-							error.dataPath,
-						),
-			  )
-			: [];
-
-		if (!errors.find(err => err.dataPath === '.senderPublicKey')) {
-			// `senderPublicKey` passed format check, safely check equality to senderId
-			if (
-				this.senderId.toUpperCase() !==
-				getAddressFromPublicKey(this.senderPublicKey).toUpperCase()
-			) {
-				errors.push(
-					new TransactionError(
-						'`senderId` does not match `senderPublicKey`',
-						this.id,
-						'.senderId',
-					),
-				);
-			}
-		}
-		if (this.id !== getId(this.getBytes())) {
-			errors.push(
-				new TransactionError('Invalid transaction id', this.id, '.id'),
-			);
-		}
-
-		return {
-			id: this.id,
-			status: !valid || errors.length > 0 ? Status.FAIL : Status.OK,
-			errors,
-		};
-	}
-
 	public validate(): TransactionResponse {
-		const errors: TransactionError[] = [];
+		const errors = [...this._validateSchema()];
 		const transactionBytes = this.getBasicBytes();
 
 		const {
@@ -305,37 +291,238 @@ export abstract class BaseTransaction {
 		};
 	}
 
-	public getRequiredAttributes(): Attributes {
-		return {
+	public async prepareTransaction(store: StateStore): Promise<void[]> {
+		const attributes = this.getRequiredAttributes();
+		// Add sender id
+		const attributesWithSender = {
+			...attributes,
 			[ENTITY_ACCOUNT]: {
-				address: [getAddressFromPublicKey(this.senderPublicKey)],
+				...attributes[ENTITY_ACCOUNT],
+				address:
+					attributes[ENTITY_ACCOUNT] && attributes[ENTITY_ACCOUNT].address
+						? [...attributes[ENTITY_ACCOUNT].address, this.senderId]
+						: [this.senderId],
 			},
 		};
+
+		return Promise.all(
+			Object.entries(attributesWithSender).map(([key, value]) =>
+				store.prepare(key, value),
+			),
+		);
 	}
 
-	public processRequiredState(state: EntityMap): RequiredState {
-		const accounts = state[ENTITY_ACCOUNT];
-		if (!accounts) {
-			throw new Error('Entity account is required.');
-		}
-		if (
-			!isTypedObjectArrayWithKeys<Account>(accounts, ['address', 'publicKey'])
-		) {
-			throw new Error('Required state does not have valid account type.');
+	public apply(store: StateStore): TransactionResponse {
+		const verifyResponse = this._verify(store);
+		if (verifyResponse.status === Status.PENDING) {
+			return verifyResponse;
 		}
 
-		const sender = accounts.find(acct => acct.address === this.senderId);
-		if (!sender) {
-			throw new Error('No sender account is found.');
-		}
+		const sender = store.get<Account>('account', 'address', this.senderId);
+		const updatedBalance = new BigNum(sender.balance).sub(this.fee);
+		const updatedAccount = { ...sender, balance: updatedBalance.toString() };
+		store.set('account', updatedAccount);
+		const errors = updatedBalance.gte(0)
+			? []
+			: [
+					new TransactionError(
+						`Account does not have enough LSK: ${
+							sender.address
+						}, balance: ${convertBeddowsToLSK(sender.balance)}`,
+						this.id,
+					),
+			  ];
+		const customErrors = this.applyCustom(store);
+		errors.push(...customErrors);
 
 		return {
-			sender,
+			id: this.id,
+			status: errors.length > 0 ? Status.FAIL : Status.OK,
+			errors,
 		};
 	}
 
-	public verify({ sender }: RequiredState): TransactionResponse {
+	public undo(store: StateStore): TransactionResponse {
+		const verifyResponse = this._verify(store);
+		if (verifyResponse.status === Status.PENDING) {
+			return verifyResponse;
+		}
+		const sender = store.get<Account>('account', 'address', this.senderId);
+		const updatedBalance = new BigNum(sender.balance).add(this.fee);
+		const updatedAccount = { ...sender, balance: updatedBalance.toString() };
+		const errors = updatedBalance.lte(MAX_TRANSACTION_AMOUNT)
+			? []
+			: [new TransactionError('Invalid balance amount', this.id)];
+
+		return {
+			id: this.id,
+			status: errors.length > 0 ? Status.FAIL : Status.OK,
+			state: { sender: updatedAccount },
+			errors,
+		};
+	}
+
+	public addVerifiedMultisignature(signature: string): TransactionResponse {
+		if (!this.signatures.includes(signature)) {
+			this.signatures.push(signature);
+
+			return {
+				id: this.id,
+				status: Status.OK,
+				errors: [],
+			};
+		}
+
+		return {
+			id: this.id,
+			status: Status.FAIL,
+			errors: [
+				new TransactionError(
+					'Failed to add signature.',
+					this.id,
+					'.signatures',
+				),
+			],
+		};
+	}
+
+	public processMultisignatures(store: StateStore): TransactionResponse {
+		const sender = store.get<Account>(ENTITY_ACCOUNT, 'address', this.senderId);
+		const transactionBytes = this.signSignature
+			? Buffer.concat([this.getBasicBytes(), hexToBuffer(this.signature)])
+			: this.getBasicBytes();
+
+		if (!sender.multimin) {
+			return {
+				id: this.id,
+				status: Status.FAIL,
+				errors: [
+					new TransactionError('Sender does not have valid multimin', this.id),
+				],
+			};
+		}
+
+		const { verified, errors } = verifyMultisignatures(
+			sender.multisignatures,
+			this.signatures,
+			sender.multimin,
+			transactionBytes,
+			this.id,
+		);
+
+		if (verified) {
+			this._multisignatureStatus = MultisignatureStatus.READY;
+		}
+
+		return {
+			id: this.id,
+			status:
+				Array.isArray(errors) &&
+				errors.length > 0 &&
+				errors[0] instanceof TransactionPendingError
+					? Status.PENDING
+					: verified
+						? Status.OK
+						: Status.FAIL,
+			errors: (errors as ReadonlyArray<TransactionError>) || [],
+		};
+	}
+
+	public isExpired(date: Date = new Date()): boolean {
+		// tslint:disable-next-line no-magic-numbers
+		const timeNow = Math.floor(date.getTime() / 1000);
+		const timeOut =
+			this._multisignatureStatus === MultisignatureStatus.PENDING ||
+			this._multisignatureStatus === MultisignatureStatus.READY
+				? UNCONFIRMED_MULTISIG_TRANSACTION_TIMEOUT
+				: UNCONFIRMED_TRANSACTION_TIMEOUT;
+		const timeElapsed =
+			// tslint:disable-next-line no-magic-numbers
+			timeNow - Math.floor(this.receivedAt.getTime() / 1000);
+
+		return timeElapsed > timeOut;
+	}
+
+	public sign(passphrase: string, secondPassphrase?: string): void {
+		this._signature = undefined;
+		this._signSignature = undefined;
+		this._signature = signData(hash(this.getBytes()), passphrase);
+		if (secondPassphrase) {
+			this._signSignature = signData(hash(this.getBytes()), secondPassphrase);
+		}
+		this._id = getId(this.getBytes());
+	}
+
+	protected getBasicBytes(): Buffer {
+		const transactionType = Buffer.alloc(BYTESIZES.TYPE, this.type);
+		const transactionTimestamp = Buffer.alloc(BYTESIZES.TIMESTAMP);
+		transactionTimestamp.writeIntLE(this.timestamp, 0, BYTESIZES.TIMESTAMP);
+
+		const transactionSenderPublicKey = hexToBuffer(this.senderPublicKey);
+
+		const transactionRecipientID = this.recipientId
+			? bigNumberToBuffer(this.recipientId.slice(0, -1), BYTESIZES.RECIPIENT_ID)
+			: Buffer.alloc(BYTESIZES.RECIPIENT_ID);
+
+		const transactionAmount = this.amount.toBuffer({
+			endian: 'little',
+			size: BYTESIZES.AMOUNT,
+		});
+
+		return Buffer.concat([
+			transactionType,
+			transactionTimestamp,
+			transactionSenderPublicKey,
+			transactionRecipientID,
+			transactionAmount,
+			this.getAssetBytes(),
+		]);
+	}
+
+	private _validateSchema(): ReadonlyArray<TransactionError> {
+		const transaction = this.toJSON();
+		const baseTransactionValidator = validator.compile(schemas.baseTransaction);
+		const valid = baseTransactionValidator(transaction) as boolean;
+		const errors = baseTransactionValidator.errors
+			? baseTransactionValidator.errors.map(
+					error =>
+						new TransactionError(
+							`'${error.dataPath}' ${error.message}`,
+							transaction.id,
+							error.dataPath,
+						),
+			  )
+			: [];
+
+		if (!errors.find(err => err.dataPath === '.senderPublicKey')) {
+			// `senderPublicKey` passed format check, safely check equality to senderId
+			if (
+				this.senderId.toUpperCase() !==
+				getAddressFromPublicKey(this.senderPublicKey).toUpperCase()
+			) {
+				errors.push(
+					new TransactionError(
+						'`senderId` does not match `senderPublicKey`',
+						this.id,
+						'.senderId',
+					),
+				);
+			}
+		}
+		if (this.id !== getId(this.getBytes())) {
+			errors.push(
+				new TransactionError('Invalid transaction id', this.id, '.id'),
+			);
+		}
+
+		errors.push(...this.validateCustomSchema());
+
+		return errors;
+	}
+
+	private _verify(store: StateStore): TransactionResponse {
 		const errors: TransactionError[] = [];
+		const sender = store.get<Account>('account', 'address', this.senderId);
 		// Check senderPublicKey
 		if (sender.publicKey !== this.senderPublicKey) {
 			errors.push(
@@ -447,169 +634,5 @@ export abstract class BaseTransaction {
 			status: errors.length === 0 ? Status.OK : Status.FAIL,
 			errors,
 		};
-	}
-
-	public apply({ sender }: RequiredState): TransactionResponse {
-		if (!sender) {
-			throw new Error('Sender is required.');
-		}
-		const updatedBalance = new BigNum(sender.balance).sub(this.fee);
-		const updatedAccount = { ...sender, balance: updatedBalance.toString() };
-		const errors = updatedBalance.gte(0)
-			? []
-			: [
-					new TransactionError(
-						`Account does not have enough LSK: ${
-							sender.address
-						}, balance: ${convertBeddowsToLSK(sender.balance)}`,
-						this.id,
-					),
-			  ];
-
-		return {
-			id: this.id,
-			status: errors.length > 0 ? Status.FAIL : Status.OK,
-			state: { sender: updatedAccount },
-			errors,
-		};
-	}
-
-	public undo({ sender }: RequiredState): TransactionResponse {
-		if (!sender) {
-			throw new Error('Sender is required.');
-		}
-		const updatedBalance = new BigNum(sender.balance).add(this.fee);
-		const updatedAccount = { ...sender, balance: updatedBalance.toString() };
-		const errors = updatedBalance.lte(MAX_TRANSACTION_AMOUNT)
-			? []
-			: [new TransactionError('Invalid balance amount', this.id)];
-
-		return {
-			id: this.id,
-			status: errors.length > 0 ? Status.FAIL : Status.OK,
-			state: { sender: updatedAccount },
-			errors,
-		};
-	}
-
-	public addVerifiedMultisignature(signature: string): TransactionResponse {
-		if (!this.signatures.includes(signature)) {
-			this.signatures.push(signature);
-
-			return {
-				id: this.id,
-				status: Status.OK,
-				errors: [],
-			};
-		}
-
-		return {
-			id: this.id,
-			status: Status.FAIL,
-			errors: [
-				new TransactionError(
-					'Failed to add signature.',
-					this.id,
-					'.signatures',
-				),
-			],
-		};
-	}
-
-	public processMultisignatures({
-		sender,
-	}: RequiredState): TransactionResponse {
-		const transactionBytes = this.signSignature
-			? Buffer.concat([
-					this.getBasicBytes(),
-					hexToBuffer(this.signature),
-			  ])
-			: this.getBasicBytes();
-
-		if (!sender.multimin) {
-			return {
-				id: this.id,
-				status: Status.FAIL,
-				errors: [
-					new TransactionError('Sender does not have valid multimin', this.id),
-				],
-			};
-		}
-
-		const { verified, errors } = verifyMultisignatures(
-			sender.multisignatures,
-			this.signatures,
-			sender.multimin,
-			transactionBytes,
-			this.id,
-		);
-
-		if (verified) {
-			this._multisignatureStatus = MultisignatureStatus.READY;
-		}
-
-		return {
-			id: this.id,
-			status:
-				Array.isArray(errors) &&
-				errors.length > 0 &&
-				errors[0] instanceof TransactionPendingError
-					? Status.PENDING
-					: verified
-						? Status.OK
-						: Status.FAIL,
-			errors: (errors as ReadonlyArray<TransactionError>) || [],
-		};
-	}
-
-	public isExpired(date: Date = new Date()): boolean {
-		// tslint:disable-next-line no-magic-numbers
-		const timeNow = Math.floor(date.getTime() / 1000);
-		const timeOut =
-			this._multisignatureStatus === MultisignatureStatus.PENDING ||
-			this._multisignatureStatus === MultisignatureStatus.READY
-				? UNCONFIRMED_MULTISIG_TRANSACTION_TIMEOUT
-				: UNCONFIRMED_TRANSACTION_TIMEOUT;
-		const timeElapsed =
-			// tslint:disable-next-line no-magic-numbers
-			timeNow - Math.floor(this.receivedAt.getTime() / 1000);
-
-		return timeElapsed > timeOut;
-	}
-
-	public sign(passphrase: string, secondPassphrase?: string): void {
-		this._signature = undefined;
-		this._signSignature = undefined;
-		this._signature = signData(hash(this.getBytes()), passphrase);
-		if (secondPassphrase) {
-			this._signSignature = signData(hash(this.getBytes()), secondPassphrase);
-		}
-		this._id = getId(this.getBytes());
-	}
-
-	protected getBasicBytes(): Buffer {
-		const transactionType = Buffer.alloc(BYTESIZES.TYPE, this.type);
-		const transactionTimestamp = Buffer.alloc(BYTESIZES.TIMESTAMP);
-		transactionTimestamp.writeIntLE(this.timestamp, 0, BYTESIZES.TIMESTAMP);
-
-		const transactionSenderPublicKey = hexToBuffer(this.senderPublicKey);
-
-		const transactionRecipientID = this.recipientId
-			? bigNumberToBuffer(this.recipientId.slice(0, -1), BYTESIZES.RECIPIENT_ID)
-			: Buffer.alloc(BYTESIZES.RECIPIENT_ID);
-
-		const transactionAmount = this.amount.toBuffer({
-			endian: 'little',
-			size: BYTESIZES.AMOUNT,
-		});
-
-		return Buffer.concat([
-			transactionType,
-			transactionTimestamp,
-			transactionSenderPublicKey,
-			transactionRecipientID,
-			transactionAmount,
-			this.getAssetBytes(),
-		]);
 	}
 }
