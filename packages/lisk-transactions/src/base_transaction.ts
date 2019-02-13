@@ -68,18 +68,12 @@ export interface StateStoreGetter<T> {
 	find(func: (item: T) => boolean): T | undefined;
 }
 
-export interface StateStoreDefaultGetter<T> {
-	getOrDefault(key: string): T;
-}
-
 export interface StateStoreSetter<T> {
 	set(key: string, value: T): void;
 }
 
 export interface StateStore {
-	readonly account: StateStoreGetter<Account> &
-		StateStoreDefaultGetter<Account> &
-		StateStoreSetter<Account>;
+	readonly account: StateStoreGetter<Account> & StateStoreSetter<Account>;
 	readonly transaction: StateStoreGetter<TransactionJSON>;
 }
 

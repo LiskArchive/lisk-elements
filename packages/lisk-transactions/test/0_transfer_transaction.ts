@@ -170,11 +170,6 @@ describe('Transfer transaction class', () => {
 			store.account.get = () => {
 				return {
 					...sender,
-				};
-			};
-			store.account.getOrDefault = () => {
-				return {
-					...recipient,
 					balance: new BigNum(MAX_TRANSACTION_AMOUNT),
 				};
 			};
@@ -185,7 +180,7 @@ describe('Transfer transaction class', () => {
 
 	describe('#undoAsset', () => {
 		it('should return error when recipient balance is insufficient', async () => {
-			store.account.getOrDefault = () => {
+			store.account.get = () => {
 				return {
 					...recipient,
 					balance: new BigNum('0'),
