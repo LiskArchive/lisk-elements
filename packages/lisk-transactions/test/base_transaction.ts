@@ -17,7 +17,6 @@ import { SinonStub } from 'sinon';
 import * as cryptography from '@liskhq/lisk-cryptography';
 import { BYTESIZES, MAX_TRANSACTION_AMOUNT } from '../src/constants';
 import { BaseTransaction, MultisignatureStatus } from '../src/base_transaction';
-import { TransactionJSON } from '../src/transaction_types';
 import { Status } from '../src/response';
 import {
 	TransactionError,
@@ -39,7 +38,7 @@ import {
 } from '../fixtures';
 import * as utils from '../src/utils';
 
-describe('Base transaction class', () => {
+describe.only('Base transaction class', () => {
 	const defaultTransaction = addTransactionFields(validTransaction);
 	const defaultSecondSignatureTransaction = addTransactionFields(
 		validSecondSignatureTransaction,
@@ -165,11 +164,88 @@ describe('Base transaction class', () => {
 				fee: 10,
 			};
 			try {
-				new TestTransaction((invalidTransaction as unknown) as TransactionJSON);
+				new TestTransaction((invalidTransaction as any));
 			} catch (error) {
 				expect(error).to.be.an.instanceOf(TransactionMultiError);
 			}
 		});
+
+		it('should throw a transaction multierror with undefined id', async () => {
+			const invalidTransaction = {
+				...defaultTransaction,
+				id: undefined,
+			};
+			try {
+				new TestTransaction((invalidTransaction as any));
+			} catch (error) {
+				expect(error).to.be.an.instanceOf(TransactionMultiError);
+			}
+		});
+	});
+
+	describe('#get fee', () => {
+		it('should return fee', async () => {
+			const tx = new TestTransaction(defaultTransaction);
+			expect(tx.fee.toString()).to.equal(defaultTransaction.fee);
+		});
+
+		it('should throw an error if it is called before initialization', async () => {
+			const tx = new TestTransaction(defaultTransaction);
+			(tx as any)._fee = undefined;
+			try {
+				tx.fee;
+			} catch (error) {
+				expect(error.message).to.equal('fee is required to be set before use');
+			}
+		});
+	});
+
+	describe('#get id', () => {
+		it('should return id', async () => {
+			const tx = new TestTransaction(defaultTransaction);
+			expect(tx.id).to.equal(defaultTransaction.id);
+		});
+
+		it('should throw an error if it is called before initialization', async () => {
+			const tx = new TestTransaction(defaultTransaction);
+			(tx as any)._id = undefined;
+			try {
+				tx.id;
+			} catch (error) {
+				expect(error.message).to.equal('id is required to be set before use');
+			}
+		});
+	});
+
+	describe('#get signature', () => {
+		it('should return signature', async () => {
+			const tx = new TestTransaction(defaultTransaction);
+			expect(tx.signature).to.equal(defaultTransaction.signature);
+		});
+
+		it('should throw an error if it is called before initialization', async () => {
+			const tx = new TestTransaction(defaultTransaction);
+			(tx as any)._signature = undefined;
+			try {
+				tx.signature;
+			} catch (error) {
+				expect(error.message).to.equal('signature is required to be set before use');
+			}
+		});
+	});
+
+	describe('#get signSignature', () => {
+		it('should return signature', async () => {
+			const tx = new TestTransaction(defaultTransaction);
+			expect(tx.signSignature).to.equal(defaultTransaction.signSignature);
+		});
+
+		it('should return undefined', async () => {
+			const tx = new TestTransaction(defaultTransaction);
+			(tx as any)._signSignature = undefined;
+			expect(tx.signSignature).to.be.undefined;
+		});
+		
 	});
 
 	describe('#assetToJSON', async () => {
