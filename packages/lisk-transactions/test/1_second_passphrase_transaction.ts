@@ -22,6 +22,7 @@ import {
 import { TransactionJSON } from '../src/transaction_types';
 import { Status } from '../src/response';
 import { hexToBuffer } from '@liskhq/lisk-cryptography';
+import { TransactionError } from '../src';
 
 describe('Second signature registration transaction class', () => {
 	let validTestTransaction: SecondSignatureTransaction;
@@ -143,6 +144,33 @@ describe('Second signature registration transaction class', () => {
 			expect(errors).to.be.empty;
 		});
 
+		it('should return error with invalid type', async () => {
+			const transferTransactionWithInvalidRecipientId = new SecondSignatureTransaction(
+				{
+					...validRegisterSecondSignatureTransaction,
+					type: 2,
+				},
+			);
+			const errors = (transferTransactionWithInvalidRecipientId as any).validateAsset();
+
+			expect(errors[0])
+				.to.be.instanceof(TransactionError)
+				.and.to.have.property('message', 'Invalid type');
+		});
+
+		it('should return error when fee is invalid', async () => {
+			const invalidTransaction = {
+				...validRegisterSecondSignatureTransaction,
+				fee: '0',
+			};
+			const transaction = new SecondSignatureTransaction(invalidTransaction);
+			const errors = (transaction as any).validateAsset();
+
+			expect(errors[0])
+				.to.be.instanceof(TransactionError)
+				.and.to.have.property('message', 'Fee must be equal to 500000000');
+		});
+
 		it('should return error when amount is non-zero', async () => {
 			const invalidTransaction = {
 				...validRegisterSecondSignatureTransaction,
@@ -151,7 +179,39 @@ describe('Second signature registration transaction class', () => {
 			const transaction = new SecondSignatureTransaction(invalidTransaction);
 			const errors = (transaction as any).validateAsset();
 
-			expect(errors).not.to.be.empty;
+			expect(errors[0])
+				.to.be.instanceof(TransactionError)
+				.and.to.have.property(
+					'message',
+					'Amount must be zero for second signature registration transaction',
+				);
+		});
+
+		it('should return error when recipientId is present', async () => {
+			const invalidTransaction = {
+				...validRegisterSecondSignatureTransaction,
+				recipientId: '123L',
+			};
+			const transaction = new SecondSignatureTransaction(invalidTransaction);
+			const errors = (transaction as any).validateAsset();
+
+			expect(errors[0])
+				.to.be.instanceof(TransactionError)
+				.and.to.have.property('message', 'Invalid recipient');
+		});
+
+		it('should return error when recipientId is present', async () => {
+			const invalidTransaction = {
+				...validRegisterSecondSignatureTransaction,
+				recipientPublicKey:
+					'0eb0a6d7b862dc35c856c02c47fde3b4f60f2f3571a888b9a8ca7540c6793243',
+			};
+			const transaction = new SecondSignatureTransaction(invalidTransaction);
+			const errors = (transaction as any).validateAsset();
+
+			expect(errors[0])
+				.to.be.instanceof(TransactionError)
+				.and.to.have.property('message', 'Invalid recipientPublicKey');
 		});
 
 		it('should return error when asset includes invalid publicKey', async () => {
@@ -214,6 +274,22 @@ describe('Second signature registration transaction class', () => {
 		it('should return no errors', async () => {
 			const errors = (validTestTransaction as any).undoAsset(store);
 			expect(errors).to.be.empty;
+		});
+	});
+
+	describe('#sign', () => {
+		it('should sign transaction and insert signature and id', async () => {
+			const transactionWithoutSignature = {
+				...validRegisterSecondSignatureTransaction,
+				signature: undefined,
+				id: undefined,
+			};
+			const transaction = new SecondSignatureTransaction(
+				transactionWithoutSignature,
+			);
+			transaction.sign('some pass phrase');
+			expect(transaction.id).not.to.be.empty;
+			expect(transaction.signature).not.to.be.empty;
 		});
 	});
 });

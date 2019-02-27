@@ -138,7 +138,7 @@ describe('Transfer transaction class', () => {
 			expect(errors).to.be.empty;
 		});
 
-		it('should return error with invalid fee', async () => {
+		it('should return error with invalid type', async () => {
 			const transferTransactionWithInvalidRecipientId = new TransferTransaction(
 				{
 					...validTransferTransaction,
