@@ -38,7 +38,7 @@ import {
 } from '../fixtures';
 import * as utils from '../src/utils';
 
-describe.only('Base transaction class', () => {
+describe('Base transaction class', () => {
 	const defaultTransaction = addTransactionFields(validTransaction);
 	const defaultSecondSignatureTransaction = addTransactionFields(
 		validSecondSignatureTransaction,
@@ -52,7 +52,7 @@ describe.only('Base transaction class', () => {
 	let validMultisignatureTestTransaction: BaseTransaction;
 	let storeAccountGetStub: sinon.SinonStub;
 	let storeAccountGetOrDefaultStub: sinon.SinonStub;
-
+	let storeAccountSetStub: sinon.SinonStub;
 
 	beforeEach(async () => {
 		validTestTransaction = new TestTransaction(defaultTransaction);
@@ -62,8 +62,13 @@ describe.only('Base transaction class', () => {
 		validMultisignatureTestTransaction = new TestTransaction(
 			defaultMultisignatureTransaction,
 		);
-		storeAccountGetStub = sandbox.stub(store.account, 'get').returns(defaultSenderAccount);
-		storeAccountGetOrDefaultStub = sandbox.stub(store.account, 'getOrDefault').returns(defaultSenderAccount);
+		storeAccountGetStub = sandbox
+			.stub(store.account, 'get')
+			.returns(defaultSenderAccount);
+		storeAccountGetOrDefaultStub = sandbox
+			.stub(store.account, 'getOrDefault')
+			.returns(defaultSenderAccount);
+		storeAccountSetStub = sandbox.stub(store.account, 'set');
 	});
 
 	describe('#constructor', () => {
@@ -164,38 +169,43 @@ describe.only('Base transaction class', () => {
 				fee: 10,
 			};
 			try {
-				new TestTransaction((invalidTransaction as any));
+				new TestTransaction(invalidTransaction as any);
 			} catch (error) {
 				expect(error).to.be.an.instanceOf(TransactionMultiError);
 			}
 		});
 
-		it('should throw a transaction multierror with undefined id', async () => {
+		it('should populate senderId from senderPublicKey if senderId does not exsit', async () => {
+			const transactionWithoutSenderId = {
+				...defaultTransaction,
+				senderId: undefined,
+			};
+			const transaction = new TestTransaction(transactionWithoutSenderId);
+			expect(transaction.senderId).to.equal(defaultTransaction.senderId);
+		});
+
+		it('should throw TransactionMultiError if schema has invalid format and without id', async () => {
 			const invalidTransaction = {
 				...defaultTransaction,
+				timestamp: 'timestamp',
 				id: undefined,
 			};
 			try {
-				new TestTransaction((invalidTransaction as any));
+				new TestTransaction(invalidTransaction as any);
 			} catch (error) {
 				expect(error).to.be.an.instanceOf(TransactionMultiError);
 			}
 		});
-	});
 
-	describe('#get fee', () => {
-		it('should return fee', async () => {
-			const tx = new TestTransaction(defaultTransaction);
-			expect(tx.fee.toString()).to.equal(defaultTransaction.fee);
-		});
-
-		it('should throw an error if it is called before initialization', async () => {
-			const tx = new TestTransaction(defaultTransaction);
-			(tx as any)._fee = undefined;
+		it('should throw a transaction multierror with undefined timestamp', async () => {
+			const invalidTransaction = {
+				...defaultTransaction,
+				timestamp: undefined,
+			};
 			try {
-				tx.fee;
+				new TestTransaction(invalidTransaction as any);
 			} catch (error) {
-				expect(error.message).to.equal('fee is required to be set before use');
+				expect(error).to.be.an.instanceOf(TransactionMultiError);
 			}
 		});
 	});
@@ -229,7 +239,9 @@ describe.only('Base transaction class', () => {
 			try {
 				tx.signature;
 			} catch (error) {
-				expect(error.message).to.equal('signature is required to be set before use');
+				expect(error.message).to.equal(
+					'signature is required to be set before use',
+				);
 			}
 		});
 	});
@@ -245,7 +257,6 @@ describe.only('Base transaction class', () => {
 			(tx as any)._signSignature = undefined;
 			expect(tx.signSignature).to.be.undefined;
 		});
-		
 	});
 
 	describe('#assetToJSON', async () => {
@@ -643,6 +654,32 @@ describe.only('Base transaction class', () => {
 			expect(status).to.eql(Status.OK);
 		});
 
+		it('should use signature for verifyMultiSignature', async () => {
+			sandbox.stub(utils, 'verifyMultiSignatures').returns({
+				status: MultisignatureStatus.READY,
+				errors: [],
+			});
+			const transactionWithSignSignature = {
+				...defaultTransaction,
+				signSignature:
+					'8ac892e223db5cc6695563ffbbb13e86d099d62d41f86e8131f8a03082c51a3b868830a5ca4a60cdb10a63dc0605bf217798dfb00f599e37491b5e701f856704',
+			};
+			const signSignatureTestTransaction = new TestTransaction(
+				transactionWithSignSignature,
+			);
+			signSignatureTestTransaction.processMultisignatures(store);
+
+			expect(utils.verifyMultiSignatures).to.be.calledWithExactly(
+				signSignatureTestTransaction.id,
+				defaultSenderAccount,
+				signSignatureTestTransaction.signatures,
+				Buffer.concat([
+					(signSignatureTestTransaction as any).getBasicBytes(),
+					Buffer.from(transactionWithSignSignature.signature, 'hex'),
+				]),
+			);
+		});
+
 		it('should return a pending transaction response with missing signatures', async () => {
 			const pendingErrors = [
 				new TransactionPendingError(
@@ -710,6 +747,21 @@ describe.only('Base transaction class', () => {
 			expect(errors).to.be.empty;
 		});
 
+		it('should return update the sender account public key if it doesn not exist', async () => {
+			storeAccountGetOrDefaultStub.returns({
+				...defaultSenderAccount,
+				publicKey: undefined,
+			});
+			validTestTransaction.apply(store);
+			expect(storeAccountSetStub).calledWithExactly(
+				defaultSenderAccount.address,
+				{
+					...defaultSenderAccount,
+					balance: '0',
+				},
+			);
+		});
+
 		it('should return a failed transaction response with insufficient account balance', async () => {
 			storeAccountGetOrDefaultStub.returns({
 				...defaultSenderAccount,
@@ -728,6 +780,20 @@ describe.only('Base transaction class', () => {
 					}, balance: 0`,
 				);
 		});
+
+		it('should return a pending transaction response with pending error', async () => {
+			storeAccountGetStub.returns({
+				...defaultMultisignatureAccount,
+				multiMin: 15,
+			});
+			const { id, status, errors } = validTestTransaction.apply(store);
+
+			expect(id).to.be.eql(validTestTransaction.id);
+			expect(status).to.eql(Status.PENDING);
+			expect((errors as ReadonlyArray<TransactionError>)[0])
+				.to.be.instanceof(TransactionPendingError)
+				.and.to.have.property('message', `Missing signatures`);
+		});
 	});
 
 	describe('#undo', () => {
@@ -736,6 +802,21 @@ describe.only('Base transaction class', () => {
 			expect(id).to.be.eql(validTestTransaction.id);
 			expect(status).to.eql(Status.OK);
 			expect(errors).to.be.eql([]);
+		});
+
+		it('should return update the sender account public key if it doesn not exist', async () => {
+			storeAccountGetOrDefaultStub.returns({
+				...defaultSenderAccount,
+				publicKey: undefined,
+			});
+			validTestTransaction.undo(store);
+			expect(storeAccountSetStub).calledWithExactly(
+				defaultSenderAccount.address,
+				{
+					...defaultSenderAccount,
+					balance: '20000000',
+				},
+			);
 		});
 
 		it('should return a failed transaction response with account balance exceeding max amount', async () => {
@@ -755,6 +836,7 @@ describe.only('Base transaction class', () => {
 	describe('#isExpired', () => {
 		let unexpiredTestTransaction: BaseTransaction;
 		let expiredTestTransaction: BaseTransaction;
+		let expiredMultisignatureTestTransaction: BaseTransaction;
 		beforeEach(async () => {
 			const unexpiredTransaction = {
 				...defaultTransaction,
@@ -764,8 +846,17 @@ describe.only('Base transaction class', () => {
 				...defaultTransaction,
 				receivedAt: new Date(+new Date() - 1300 * 60000),
 			};
+			const expiredMultisignTransaction = {
+				...defaultTransaction,
+				receivedAt: new Date(+new Date() - 10800 * 8 * 60000),
+			};
 			unexpiredTestTransaction = new TestTransaction(unexpiredTransaction);
 			expiredTestTransaction = new TestTransaction(expiredTransaction);
+			expiredMultisignatureTestTransaction = new TestTransaction(
+				expiredMultisignTransaction,
+			);
+			(expiredMultisignatureTestTransaction as any)._multisignatureStatus =
+				MultisignatureStatus.PENDING;
 		});
 
 		it('should return false for unexpired transaction', async () => {
@@ -774,6 +865,11 @@ describe.only('Base transaction class', () => {
 
 		it('should return true for expired transaction', async () => {
 			expect(expiredTestTransaction.isExpired(new Date())).to.be.true;
+		});
+
+		it('should return true for expired multisignature transaction', async () => {
+			expect(expiredMultisignatureTestTransaction.isExpired(new Date())).to.be
+				.true;
 		});
 	});
 

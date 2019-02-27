@@ -197,7 +197,7 @@ export abstract class BaseTransaction {
 			recipientPublicKey: this.recipientPublicKey,
 			fee: this.fee.toString(),
 			signature: this.signature,
-			signSignature: this.signSignature ? this.signSignature : undefined,
+			signSignature: this.signSignature,
 			signatures: this.signatures,
 			asset: this.assetToJSON(),
 			receivedAt: this.receivedAt,
@@ -321,6 +321,7 @@ export abstract class BaseTransaction {
 
 	public processMultisignatures(store: StateStore): TransactionResponse {
 		const sender = store.account.get(this.senderId);
+
 		const transactionBytes = this.signSignature
 			? Buffer.concat([this.getBasicBytes(), hexToBuffer(this.signature)])
 			: this.getBasicBytes();
