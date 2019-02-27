@@ -18,7 +18,7 @@ import { MAX_TRANSACTION_AMOUNT, TRANSFER_FEE } from '../src/constants';
 import { TransferTransaction } from '../src/0_transfer_transaction';
 import { Account } from '../src/transaction_types';
 import { Status } from '../src/response';
-import { TransactionError } from '../src/errors';
+import { TransactionError, TransactionMultiError } from '../src/errors';
 import { addTransactionFields, MockStateStore as store } from './helpers';
 import { validTransferAccount, validTransferTransactions } from '../fixtures';
 
@@ -71,6 +71,19 @@ describe('Transfer transaction class', () => {
 				TRANSFER_FEE.toString(),
 			);
 		});
+
+		it('should throw an error with invalid asset', async () => {
+			try {
+				new TransferTransaction({
+					...validTransferTransaction,
+					asset: {
+						data: 123,
+					},
+				});
+			} catch (error) {
+				expect(error).to.be.instanceOf(TransactionMultiError);
+			}
+		});
 	});
 
 	describe('#assetToBytes', () => {
@@ -78,6 +91,11 @@ describe('Transfer transaction class', () => {
 			const expectedBytes = '61';
 			const assetBytes = (validSelfTransferTestTransaction as any).assetToBytes();
 			expect(assetBytes).to.eql(Buffer.from(expectedBytes, 'hex'));
+		});
+
+		it('should return a zero buffer', async () => {
+			const assetBytes = (validTransferTestTransaction as any).assetToBytes();
+			expect(assetBytes).to.eql(Buffer.alloc(0));
 		});
 	});
 
@@ -120,6 +138,48 @@ describe('Transfer transaction class', () => {
 			expect(errors).to.be.empty;
 		});
 
+		it('should return error with invalid fee', async () => {
+			const transferTransactionWithInvalidRecipientId = new TransferTransaction(
+				{
+					...validTransferTransaction,
+					type: 2,
+				},
+			);
+			const errors = (transferTransactionWithInvalidRecipientId as any).validateAsset();
+
+			expect(errors[0])
+				.to.be.instanceof(TransactionError)
+				.and.to.have.property('message', 'Invalid type');
+		});
+
+		it('should return error with invalid fee', async () => {
+			const transferTransactionWithInvalidRecipientId = new TransferTransaction(
+				{
+					...validTransferTransaction,
+					fee: '0',
+				},
+			);
+			const errors = (transferTransactionWithInvalidRecipientId as any).validateAsset();
+
+			expect(errors[0])
+				.to.be.instanceof(TransactionError)
+				.and.to.have.property('message', 'Fee must be equal to 10000000');
+		});
+
+		it('should return error without recipientId', async () => {
+			const transferTransactionWithInvalidRecipientId = new TransferTransaction(
+				{
+					...validTransferTransaction,
+					recipientId: undefined,
+				},
+			);
+			const errors = (transferTransactionWithInvalidRecipientId as any).validateAsset();
+
+			expect(errors[0])
+				.to.be.instanceof(TransactionError)
+				.and.to.have.property('message', '`recipientId` must be provided.');
+		});
+
 		it('should return error with invalid recipientId', async () => {
 			const transferTransactionWithInvalidRecipientId = new TransferTransaction(
 				{
@@ -150,6 +210,18 @@ describe('Transfer transaction class', () => {
 					'message',
 					`Amount must be a valid number in string format.`,
 				);
+		});
+
+		it('should return error with invalid recipientId', async () => {
+			const transferTransactionWithInvalidAsset = new TransferTransaction({
+				...validSelfTransferTransaction,
+				recipientId: '1977368676922172803L',
+			});
+			const errors = (transferTransactionWithInvalidAsset as any).validateAsset();
+
+			expect(errors[0])
+				.to.be.instanceof(TransactionError)
+				.and.have.property('dataPath', '.recipientId');
 		});
 
 		it('should return error with invalid asset', async () => {
