@@ -12,17 +12,15 @@
  * Removal or modification of this copyright notice is prohibited.
  *
  */
-import {
-	BaseTransaction,
-	StateStore,
-	StateStorePrepare,
-} from './base_transaction';
+import { BaseTransaction, StateStore } from './base_transaction';
 import { DAPP_FEE } from './constants';
 import { TransactionError, TransactionMultiError } from './errors';
 import { TransactionJSON } from './transaction_types';
 import { stringEndsWith, validator } from './utils/validation';
 
 const TRANSACTION_DAPP_TYPE = 5;
+const ENTITY_DAPP_NAME = 'dappname:tx-id';
+const ENTITY_DAPP_LINK = 'dapplink:tx-id';
 
 export interface DappAsset {
 	readonly dapp: {
@@ -186,21 +184,6 @@ export class DappTransaction extends BaseTransaction {
 		};
 	}
 
-	public async prepare(store: StateStorePrepare): Promise<void> {
-		await store.account.cache([
-			{
-				address: this.senderId,
-			},
-		]);
-
-		await store.transaction.cache([
-			{
-				dapp_name: this.asset.dapp.name,
-			},
-			{ dapp_link: this.asset.dapp.link },
-		]);
-	}
-
 	protected verifyAgainstTransactions(
 		transactions: ReadonlyArray<TransactionJSON>,
 	): ReadonlyArray<TransactionError> {
@@ -331,13 +314,13 @@ export class DappTransaction extends BaseTransaction {
 		return errors;
 	}
 
-	protected applyAsset(store: StateStore): ReadonlyArray<TransactionError> {
+	protected async applyAsset(
+		store: StateStore,
+	): Promise<ReadonlyArray<TransactionError>> {
 		const errors: TransactionError[] = [];
-		const nameExists = store.transaction.find(
-			(transaction: TransactionJSON) =>
-				transaction.type === TRANSACTION_DAPP_TYPE &&
-				(transaction.asset as DappAsset).dapp &&
-				(transaction.asset as DappAsset).dapp.name === this.asset.dapp.name,
+		const nameExists = await store.exists(
+			ENTITY_DAPP_NAME,
+			this.asset.dapp.name,
 		);
 
 		if (nameExists) {
@@ -347,13 +330,13 @@ export class DappTransaction extends BaseTransaction {
 					this.id,
 				),
 			);
+		} else {
+			await store.set(ENTITY_DAPP_NAME, this.asset.dapp.name, this.id);
 		}
 
-		const linkExists = store.transaction.find(
-			(transaction: TransactionJSON) =>
-				transaction.type === TRANSACTION_DAPP_TYPE &&
-				(transaction.asset as DappAsset).dapp &&
-				(transaction.asset as DappAsset).dapp.link === this.asset.dapp.link,
+		const linkExists = await store.exists(
+			ENTITY_DAPP_LINK,
+			this.asset.dapp.link,
 		);
 
 		if (linkExists) {
@@ -363,13 +346,20 @@ export class DappTransaction extends BaseTransaction {
 					this.id,
 				),
 			);
+		} else {
+			await store.set(ENTITY_DAPP_LINK, this.asset.dapp.link, this.id);
 		}
 
 		return errors;
 	}
 
 	// tslint:disable-next-line prefer-function-over-method
-	protected undoAsset(_: StateStore): ReadonlyArray<TransactionError> {
+	protected async undoAsset(
+		store: StateStore,
+	): Promise<ReadonlyArray<TransactionError>> {
+		await store.unset(ENTITY_DAPP_NAME, this.asset.dapp.name);
+		await store.unset(ENTITY_DAPP_LINK, this.asset.dapp.link);
+
 		return [];
 	}
 }
