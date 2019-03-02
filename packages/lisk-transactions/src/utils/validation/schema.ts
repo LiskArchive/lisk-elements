@@ -57,7 +57,7 @@ export const transaction = {
 			type: 'object',
 		},
 		receivedAt: {
-			type: 'object',
+			type: 'string',
 		},
 	},
 };

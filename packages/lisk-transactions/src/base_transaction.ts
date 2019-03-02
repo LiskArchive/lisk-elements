@@ -140,7 +140,9 @@ export abstract class BaseTransaction {
 		this._signSignature = rawTransaction.signSignature;
 		this.timestamp = rawTransaction.timestamp;
 		this.type = rawTransaction.type;
-		this.receivedAt = rawTransaction.receivedAt || new Date();
+		this.receivedAt = rawTransaction.receivedAt
+			? new Date(rawTransaction.receivedAt)
+			: new Date();
 	}
 
 	public get id(): string {
@@ -178,7 +180,7 @@ export abstract class BaseTransaction {
 			signSignature: this.signSignature ? this.signSignature : undefined,
 			signatures: this.signatures,
 			asset: this.assetToJSON(),
-			receivedAt: this.receivedAt,
+			receivedAt: this.receivedAt.toUTCString(),
 		};
 
 		return transaction;
