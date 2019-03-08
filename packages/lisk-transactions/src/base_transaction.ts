@@ -32,7 +32,6 @@ import {
 import {
 	convertToTransactionError,
 	TransactionError,
-	TransactionMultiError,
 	TransactionPendingError,
 } from './errors';
 import { createResponse, Status } from './response';
@@ -64,11 +63,11 @@ export interface StateStore {
 	getOrDefault(bucket: string, key: string): Promise<Account>;
 	exists(bucket: string, key: string): Promise<boolean>;
 	unset(bucket: string, key: string): Promise<void>;
-	// tslint:disable-next-line no-any
 	replace(
 		bucket: string,
 		oldKey: string,
 		newKey: string,
+		// tslint:disable-next-line no-any
 		value: any,
 	): Promise<void>;
 }
@@ -117,27 +116,18 @@ export abstract class BaseTransaction {
 	): ReadonlyArray<TransactionError>;
 
 	public constructor(rawTransaction: TransactionJSON) {
-		const valid = validator.validate(schemas.transaction, rawTransaction);
-		if (!valid) {
-			throw new TransactionMultiError(
-				'Invalid field types',
-				rawTransaction.id,
-				convertToTransactionError(rawTransaction.id || '', validator.errors),
-			);
-		}
-
 		this.amount = new BigNum(rawTransaction.amount);
 		this.fee = new BigNum(rawTransaction.fee);
 		this._id = rawTransaction.id;
 		this.recipientId = rawTransaction.recipientId || '';
-		this.recipientPublicKey = rawTransaction.recipientPublicKey || '';
+		this.recipientPublicKey = rawTransaction.recipientPublicKey || undefined;
 		this.senderId =
 			rawTransaction.senderId ||
 			getAddressFromPublicKey(rawTransaction.senderPublicKey);
 		this.senderPublicKey = rawTransaction.senderPublicKey;
 		this._signature = rawTransaction.signature;
 		this.signatures = (rawTransaction.signatures as string[]) || [];
-		this._signSignature = rawTransaction.signSignature;
+		this._signSignature = rawTransaction.signSignature || undefined;
 		this.timestamp = rawTransaction.timestamp;
 		this.type = rawTransaction.type;
 		this.receivedAt = rawTransaction.receivedAt
@@ -180,7 +170,7 @@ export abstract class BaseTransaction {
 			signSignature: this.signSignature ? this.signSignature : undefined,
 			signatures: this.signatures,
 			asset: this.assetToJSON(),
-			receivedAt: this.receivedAt.toUTCString(),
+			receivedAt: this.receivedAt.toISOString(),
 		};
 
 		return transaction;

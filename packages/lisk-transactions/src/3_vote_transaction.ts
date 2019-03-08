@@ -200,29 +200,6 @@ export class VoteTransaction extends BaseTransaction {
 			);
 		}
 
-		if (!this.recipientPublicKey) {
-			errors.push(
-				new TransactionError(
-					'RecipientPublicKey must be set for vote transaction',
-					this.id,
-					'.recipientPublicKey',
-				),
-			);
-		}
-
-		if (
-			this.recipientPublicKey &&
-			this.recipientId !== getAddressFromPublicKey(this.recipientPublicKey)
-		) {
-			errors.push(
-				new TransactionError(
-					'recipientId does not match recipientPublicKey.',
-					this.id,
-					'.recipientId',
-				),
-			);
-		}
-
 		const assetErrors = validator.errors
 			? validator.errors.map(
 					error =>
@@ -245,9 +222,10 @@ export class VoteTransaction extends BaseTransaction {
 		const sender = await store.get<Account>(ENTITY_ACCOUNT, this.senderId);
 		this.asset.votes.forEach(async actionVotes => {
 			const vote = actionVotes.substring(1);
+			const voteAddress = getAddressFromPublicKey(vote);
 			const voteAccount = await store.get<Account>(
 				ENTITY_ACCOUNT,
-				getAddressFromPublicKey(vote),
+				voteAddress,
 			);
 			if (
 				!voteAccount ||
