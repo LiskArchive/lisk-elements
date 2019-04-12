@@ -123,20 +123,16 @@ export class MultisignatureTransaction extends BaseTransaction {
 	}
 
 	public async prepare(store: StateStorePrepare): Promise<void> {
+		const membersAddresses = extractPublicKeysFromAsset(
+			this.asset.multisignature.keysgroup,
+		).map(publicKey => ({ address: getAddressFromPublicKey(publicKey) }));
+
 		await store.account.cache([
 			{
 				address: this.senderId,
 			},
+			...membersAddresses,
 		]);
-
-		const membersPubilckeys = extractPublicKeysFromAsset(
-			this.asset.multisignature.keysgroup,
-		);
-		const memberPromises = membersPubilckeys.map(async publicKey =>
-			store.account.cache([{ address: getAddressFromPublicKey(publicKey) }]),
-		);
-
-		await Promise.all(memberPromises);
 	}
 
 	protected verifyAgainstTransactions(
