@@ -192,22 +192,6 @@ export class OutTransferTransaction extends BaseTransaction {
 			);
 		}
 
-		const transactionExists = store.transaction.find(
-			(transaction: TransactionJSON) =>
-				transaction.id === this.asset.outTransfer.transactionId,
-		);
-
-		if (transactionExists) {
-			errors.push(
-				new TransactionError(
-					`Transaction ${
-						this.asset.outTransfer.transactionId
-					} is already processed.`,
-					this.id,
-				),
-			);
-		}
-
 		const sender = store.account.get(this.senderId);
 
 		const balanceError = verifyAmountBalance(
@@ -225,7 +209,7 @@ export class OutTransferTransaction extends BaseTransaction {
 		const updatedSender = { ...sender, balance: updatedBalance.toString() };
 		store.account.set(updatedSender.address, updatedSender);
 
-		const recipient = store.account.get(this.recipientId);
+		const recipient = store.account.getOrDefault(this.recipientId);
 
 		const updatedRecipientBalance = new BigNum(recipient.balance).add(
 			this.amount,
@@ -264,7 +248,7 @@ export class OutTransferTransaction extends BaseTransaction {
 		const updatedSender = { ...sender, balance: updatedBalance.toString() };
 		store.account.set(updatedSender.address, updatedSender);
 
-		const recipient = store.account.get(this.recipientId);
+		const recipient = store.account.getOrDefault(this.recipientId);
 
 		const updatedRecipientBalance = new BigNum(recipient.balance).sub(
 			this.amount,
